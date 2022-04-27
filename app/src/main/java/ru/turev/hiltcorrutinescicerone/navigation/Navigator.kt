@@ -6,7 +6,7 @@ import androidx.fragment.app.FragmentTransaction
 import com.github.terrakok.cicerone.androidx.AppNavigator
 import com.github.terrakok.cicerone.androidx.FragmentScreen
 import ru.turev.hiltcorrutinescicerone.R
-import ru.turev.hiltcorrutinescicerone.ui.photo.PhotoGalleryFragment
+import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.PhotoGalleryFragment
 
 class Navigator(activity: FragmentActivity, containerId: Int) : AppNavigator(activity, containerId) {
 

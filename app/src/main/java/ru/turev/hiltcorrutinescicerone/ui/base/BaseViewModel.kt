@@ -7,4 +7,7 @@ abstract class BaseViewModel(
     private val router: Router,
 ) : ViewModel() {
 
+    open fun onExit() {
+        router.exit()
+    }
 }

@@ -3,7 +3,7 @@ package ru.turev.hiltcorrutinescicerone.navigation
 import com.github.terrakok.cicerone.androidx.FragmentScreen
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
 import ru.turev.hiltcorrutinescicerone.ui.detail_photo.DetailPhotoGalleryFragment
-import ru.turev.hiltcorrutinescicerone.ui.photo.PhotoGalleryFragment
+import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.PhotoGalleryFragment
 
 object Screens {
 

@@ -2,5 +2,7 @@
     <string name="app_name">Hilt Corrutines Cicerone</string>
 
     <string name="photo_null">Извините не удалось найти ничего</string>
-    <string name="photo_error">Упс! что то пошло не так(</string>
+    <string name="photo_error_network">Интеренет не поключен</string>
+    <string name="photo_error">Не удалось ничего загрузить</string>
+
 </resources>

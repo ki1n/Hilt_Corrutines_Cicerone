@@ -1,35 +1,18 @@
 package ru.turev.hiltcorrutinescicerone.ui.base
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.view.animation.Animation
+import androidx.annotation.LayoutRes
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import androidx.viewbinding.ViewBinding
 import ru.turev.hiltcorrutinescicerone.R
+import ru.turev.hiltcorrutinescicerone.extension.hideKeyboard
 
-abstract class BaseFragment<T : ViewBinding> : Fragment() {
+abstract class BaseFragment(@LayoutRes contentLayoutId: Int) : Fragment(contentLayoutId) {
 
-    protected open var binding: T? = null
-
-    protected abstract fun getBinding(container: ViewGroup?): T
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        binding = getBinding(container)
-
-        return binding?.root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        binding = null
+    override fun onPause() {
+        hideKeyboard()
+        super.onPause()
     }
 
     override fun onCreateAnimation(transit: Int, enter: Boolean, nextAnim: Int): Animation? {
