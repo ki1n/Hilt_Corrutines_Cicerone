@@ -6,7 +6,7 @@ import ru.turev.hiltcorrutinescicerone.ui.base.BaseViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class PhotoGalleryViewModel @Inject constructor(
     private val router: Router
 ) : BaseViewModel(router) {
 

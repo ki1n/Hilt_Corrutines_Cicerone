@@ -6,7 +6,7 @@ import androidx.fragment.app.FragmentTransaction
 import com.github.terrakok.cicerone.androidx.AppNavigator
 import com.github.terrakok.cicerone.androidx.FragmentScreen
 import ru.turev.hiltcorrutinescicerone.R
-import ru.turev.hiltcorrutinescicerone.ui.main.MainFragment
+import ru.turev.hiltcorrutinescicerone.ui.main.PhotoGalleryFragment
 
 class Navigator(activity: FragmentActivity, containerId: Int) : AppNavigator(activity, containerId) {
 
@@ -17,7 +17,7 @@ class Navigator(activity: FragmentActivity, containerId: Int) : AppNavigator(act
         nextFragment: Fragment
     ) {
         val enter = when {
-            currentFragment == null && nextFragment is MainFragment -> 0
+            currentFragment == null && nextFragment is PhotoGalleryFragment -> 0
 //            nextFragment is ProcessingFragment -> R.anim.fade_in
 //            nextFragment is EditorFragment -> R.anim.idle
             else -> R.anim.slide_in_right
