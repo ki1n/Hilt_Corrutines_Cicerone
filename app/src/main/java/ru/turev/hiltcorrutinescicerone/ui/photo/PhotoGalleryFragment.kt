@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.ui.main
+package ru.turev.hiltcorrutinescicerone.ui.photo
 
 import android.os.Bundle
 import android.view.View
@@ -17,6 +17,10 @@ open class PhotoGalleryFragment : BaseFragment<FragmentPhotoGalleryBinding>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+    }
+
+    companion object {
+        fun getInstance() = PhotoGalleryFragment()
     }
 
 }

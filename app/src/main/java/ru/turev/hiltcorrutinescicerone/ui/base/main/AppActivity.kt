@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.ui.base
+package ru.turev.hiltcorrutinescicerone.ui.base.main
 
 import android.os.Bundle
 import androidx.activity.viewModels

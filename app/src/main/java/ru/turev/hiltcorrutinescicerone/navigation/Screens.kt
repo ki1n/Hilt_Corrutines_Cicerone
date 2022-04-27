@@ -1,10 +1,17 @@
 package ru.turev.hiltcorrutinescicerone.navigation
 
 import com.github.terrakok.cicerone.androidx.FragmentScreen
-import ru.turev.hiltcorrutinescicerone.ui.main.PhotoGalleryFragment
+import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
+import ru.turev.hiltcorrutinescicerone.ui.detail_photo.DetailPhotoGalleryFragment
+import ru.turev.hiltcorrutinescicerone.ui.photo.PhotoGalleryFragment
 
 object Screens {
 
-    fun main(): FragmentScreen = FragmentScreen { PhotoGalleryFragment() }
+    fun detailPhotoGalleryScreen(itemPhoto: ItemPhoto): FragmentScreen = FragmentScreen {
+        DetailPhotoGalleryFragment.getInstance(itemPhoto)
+    }
 
+    fun photoGalleryScreen(): FragmentScreen = FragmentScreen {
+        PhotoGalleryFragment.getInstance()
+    }
 }

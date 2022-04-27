@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.ui.base
+package ru.turev.hiltcorrutinescicerone.ui.base.main
 
 import androidx.lifecycle.ViewModel
 import com.github.terrakok.cicerone.Router
@@ -13,6 +13,6 @@ class AppViewModel @Inject constructor(
 ) : ViewModel() {
 
     fun startNavigation() {
-        router.newRootScreen(Screens.main())
+        router.newRootScreen(Screens.photoGalleryScreen())
     }
 }
