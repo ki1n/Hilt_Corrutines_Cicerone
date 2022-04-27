@@ -83,7 +83,4 @@ dependencies {
 
     api 'jp.wasabeef:recyclerview-animators:4.0.2'
     api "jp.wasabeef.transformers:glide:1.0.3"
-
-    api "com.google.mlkit:face-detection:16.1.5"
-    api "com.squareup.okio:okio:2.10.0"
 }
