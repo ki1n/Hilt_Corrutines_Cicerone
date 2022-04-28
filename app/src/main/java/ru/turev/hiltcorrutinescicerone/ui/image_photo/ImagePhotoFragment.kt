@@ -22,10 +22,15 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initData()
         with(binding) {
             appBarImagePhoto.imgBack.setOnClickListener { viewModel.onExit() }
             appBarImagePhoto.tvName.text = itemPhoto.name
         }
+    }
+
+    private fun initData() {
+        binding.imagePhotoView.setData(itemPhoto)
     }
 
     companion object {

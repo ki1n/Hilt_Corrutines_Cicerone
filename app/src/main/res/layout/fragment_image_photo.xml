@@ -10,6 +10,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ru.turev.hiltcorrutinescicerone.view.ImagePhotoView android:id="@+id/imagePhotoView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarImagePhoto" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

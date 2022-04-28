@@ -6,24 +6,22 @@
     android:alpha="0.5"
     android:background="@color/black_grey">
 
-    <TextView
-        android:id="@+id/imgInput"
+    <TextView android:id="@+id/imgInput"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginVertical="@dimen/dp_8"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="@dimen/dp_16"
         android:hint="Тут будет текст"
         android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/imgLike"
+    <ImageView android:id="@+id/imgLike"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginVertical="@dimen/dp_8"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="@dimen/dp_16"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
