@@ -18,8 +18,14 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
 
     private val binding by viewBinding(FragmentImagePhotoBinding::bind)
 
+    private val itemPhoto by lazy { requireArguments().getParcelable<ItemPhoto>(ARGUMENT_PAYLOAD)!! }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        with(binding) {
+            appBarImagePhoto.imgBack.setOnClickListener { viewModel.onExit() }
+            appBarImagePhoto.tvName.text = itemPhoto.name
+        }
     }
 
     companion object {
