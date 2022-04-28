@@ -24,10 +24,7 @@ class DetailPhotoGalleryFragment : BaseFragment(R.layout.fragment_details_photo)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initData()
-        viewModel.run {
-            itemPhoto.observe(::onDraw)
-        }
-
+        viewModel.run { itemPhoto.observe(::onDraw) }
         binding.appBarPhotoGallerySearch.imgBack.setOnClickListener {
             viewModel.onExit()
         }
