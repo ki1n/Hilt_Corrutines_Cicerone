@@ -3,12 +3,16 @@ package ru.turev.hiltcorrutinescicerone.view
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PointF
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.appcompat.widget.AppCompatImageView
+import ru.turev.hiltcorrutinescicerone.R
 
 class ImagePhotoView @JvmOverloads constructor(
     context: Context,
@@ -16,12 +20,9 @@ class ImagePhotoView @JvmOverloads constructor(
     defStyleAttr: Int = 0,
 ) : AppCompatImageView(context, attrs, defStyleAttr) {
 
-    companion object {
-        private const val INVALID_POINTER_ID = -1
-    }
-
     private var bitmap: Bitmap? = null
     private val paint: Paint = Paint().apply { isFilterBitmap = true }
+    private val rect = Rect(0, 0, 0, 0)
     private var posX = 0f
     private var posY = 0f
     private var lastTouchX = 0f
@@ -34,6 +35,7 @@ class ImagePhotoView @JvmOverloads constructor(
         scaleDetector.onTouchEvent(event)
         val action = event.action
         when (action and MotionEvent.ACTION_MASK) {
+            // Жест начинается с события движения, ACTION_DOWN которое указывает местоположение первого указателя вниз
             MotionEvent.ACTION_DOWN -> {
                 val x = event.x
                 val y = event.y
@@ -41,6 +43,7 @@ class ImagePhotoView @JvmOverloads constructor(
                 lastTouchY = y
                 activePointerId = event.getPointerId(0)
             }
+            // Движения указателя описываются событиями движения с помощью
             MotionEvent.ACTION_MOVE -> {
                 val pointerIndex = event.findPointerIndex(activePointerId)
                 val x = event.getX(pointerIndex)
@@ -64,6 +67,7 @@ class ImagePhotoView @JvmOverloads constructor(
             MotionEvent.ACTION_CANCEL -> {
                 activePointerId = INVALID_POINTER_ID
             }
+            // При перемещении каждого дополнительного указателя вниз или вверх
             MotionEvent.ACTION_POINTER_UP -> {
                 val pointerIndex = (event.action and MotionEvent.ACTION_POINTER_INDEX_MASK
                         shr MotionEvent.ACTION_POINTER_INDEX_SHIFT)
@@ -82,14 +86,24 @@ class ImagePhotoView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.save()
-        Log.d("tag", "X: $posX Y: $posY")
+        Log.d("DEBUG", "X: $posX Y: $posY")
         canvas.translate(posX, posY)
-        canvas.scale(scaleFactor, scaleFactor)
-        // todo корректно отобразить надо, исправить
-        bitmap?.let { canvas.drawBitmap(it, 0f, 100f, paint) }
-
+        canvas.scale(scaleFactor, scaleFactor) //увеличиват с начальных точек
+        // увеличивает с центра
+        canvas.scale(scaleFactor, scaleFactor, width / 2 * 1f, height / 2 * 1f)
+        bitmap?.let { canvas.drawBitmap(it, rect.left.toFloat(), rect.bottom.toFloat(), paint) }
         canvas.restore()
     }
+
+    private fun Bitmap.getPointF(rect: Rect): PointF {
+        return PointF()
+    }
+
+    private fun Canvas.drawBitmap(
+        bitmap: Bitmap,
+        point: PointF,
+        paint: Paint? = null
+    ) = drawBitmap(bitmap, point.x, point.y, paint)
 
     // Детектор жестов масштаба
     private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -102,12 +116,38 @@ class ImagePhotoView @JvmOverloads constructor(
         }
     }
 
+    companion object {
+        private const val INVALID_POINTER_ID = -1
+    }
+
     init {
         scaleDetector = ScaleGestureDetector(context, ScaleListener())
+        onBackground()
+    }
+
+    private fun onBackground() {
+        if (bitmap == null) {
+            this.background = resources.getDrawable(R.drawable.ic_placeholder_image_photo, null)
+        } else {
+            this.background = null
+        }
     }
 
     fun setData(bitmap: Bitmap) {
-        this.bitmap = bitmap
+        val newBitmap = scaleImage(bitmap, width, height)
+        this.bitmap = newBitmap
+        onBackground()
         invalidate()
+    }
+
+    // функция маштабирует изображение
+    private fun scaleImage(bitmap: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+        val scaleWidth = newWidth.toFloat() / width
+        val scaleHeight = newHeight.toFloat() / height
+        val matrix = Matrix()
+        matrix.postScale(scaleWidth, scaleHeight)
+        return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true)
     }
 }
