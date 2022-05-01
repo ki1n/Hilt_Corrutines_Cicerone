@@ -8,7 +8,6 @@ import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.Rect
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.appcompat.widget.AppCompatImageView
@@ -16,11 +15,15 @@ import ru.turev.hiltcorrutinescicerone.R
 
 class ImagePhotoView @JvmOverloads constructor(
     context: Context,
-    attrs: AttributeSet?,
+    attrs: AttributeSet,
     defStyleAttr: Int = 0,
-) : AppCompatImageView(context, attrs, defStyleAttr) {
+) : AppCompatImageView(context, attrs, defStyleAttr), ScaleGestureDetector.OnScaleGestureListener
+// GestureDetector.OnGestureListener
+{
 
     private var bitmap: Bitmap? = null
+    // private var matrix = Matrix()
+
     private val paint: Paint = Paint().apply { isFilterBitmap = true }
     private val rect = Rect(0, 0, 0, 0)
     private var posX = 0f
@@ -28,7 +31,9 @@ class ImagePhotoView @JvmOverloads constructor(
     private var lastTouchX = 0f
     private var lastTouchY = 0f
     private var activePointerId = INVALID_POINTER_ID
-    private val scaleDetector: ScaleGestureDetector
+    private val scaleDetector = ScaleGestureDetector(context, this)
+
+    // private val gestureDetector = GestureDetector(context, this)
     private var scaleFactor = 1f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -59,7 +64,7 @@ class ImagePhotoView @JvmOverloads constructor(
                 lastTouchX = x
                 lastTouchY = y
             }
-            // поднял палец
+//            // поднял палец
             MotionEvent.ACTION_UP -> {
                 activePointerId = INVALID_POINTER_ID
             }
@@ -86,11 +91,9 @@ class ImagePhotoView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.save()
-        Log.d("DEBUG", "X: $posX Y: $posY")
         canvas.translate(posX, posY)
-        canvas.scale(scaleFactor, scaleFactor) //увеличиват с начальных точек
-        // увеличивает с центра
-        canvas.scale(scaleFactor, scaleFactor, width / 2 * 1f, height / 2 * 1f)
+        // canvas.scale(scaleFactor, scaleFactor) //увеличиват с начальных точек
+        canvas.scale(scaleFactor, scaleFactor, width / 2 * 1f, height / 2 * 1f) // увеличивает с центра
         bitmap?.let { canvas.drawBitmap(it, rect.left.toFloat(), rect.bottom.toFloat(), paint) }
         canvas.restore()
     }
@@ -105,23 +108,23 @@ class ImagePhotoView @JvmOverloads constructor(
         paint: Paint? = null
     ) = drawBitmap(bitmap, point.x, point.y, paint)
 
-    // Детектор жестов масштаба
-    private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            scaleFactor *= detector.scaleFactor
-
-            scaleFactor = 0.1f.coerceAtLeast(scaleFactor.coerceAtMost(10.0f))
-            invalidate()
-            return true
-        }
-    }
+    // Детектор жестов маштаба
+//    private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+//        override fun onScale(detector: ScaleGestureDetector): Boolean {
+//            scaleFactor *= detector.scaleFactor
+//
+//            scaleFactor = 0.1f.coerceAtLeast(scaleFactor.coerceAtMost(10.0f))
+//            invalidate()
+//            return true
+//        }
+//    }
 
     companion object {
         private const val INVALID_POINTER_ID = -1
     }
 
     init {
-        scaleDetector = ScaleGestureDetector(context, ScaleListener())
+        // scaleDetector = ScaleGestureDetector(context, ScaleListener())
         onBackground()
     }
 
@@ -142,6 +145,7 @@ class ImagePhotoView @JvmOverloads constructor(
 
     // функция маштабирует изображение
     private fun scaleImage(bitmap: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
+        // todo высчет размеров вытягивает изображение
         val width = bitmap.width
         val height = bitmap.height
         val scaleWidth = newWidth.toFloat() / width
@@ -149,5 +153,17 @@ class ImagePhotoView @JvmOverloads constructor(
         val matrix = Matrix()
         matrix.postScale(scaleWidth, scaleHeight)
         return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true)
+    }
+
+    override fun onScale(p0: ScaleGestureDetector?): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun onScaleBegin(p0: ScaleGestureDetector?): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun onScaleEnd(p0: ScaleGestureDetector?) {
+        TODO("Not yet implemented")
     }
 }

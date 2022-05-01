@@ -6,10 +6,15 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenStarted
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentImagePhotoBinding
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
@@ -35,22 +40,21 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     }
 
     private fun initData() {
-        with(binding) {
-            Glide.with(imagePhotoView.context)
-                .asBitmap()
-                .load(itemPhoto.full)
-                .into(object : CustomTarget<Bitmap>() {
-                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                        imagePhotoView.setData(resource)
-                    }
+        lifecycleScope.launch {
+            whenStarted {
+                withContext(Dispatchers.IO) {
+                    Glide.with(binding.imagePhotoView.context)
+                        .asBitmap()
+                        .load(itemPhoto.full)
+                        .into(object : CustomTarget<Bitmap>() {
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                binding.imagePhotoView.setData(resource)
+                            }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {
-                        // this is called when imageView is cleared on lifecycle call or for
-                        // some other reason.
-                        // if you are referencing the bitmap somewhere else too other than this imageView
-                        // clear it here as you can no longer have the bitmap
-                    }
-                })
+                            override fun onLoadCleared(placeholder: Drawable?) {}
+                        })
+                }
+            }
         }
     }
 

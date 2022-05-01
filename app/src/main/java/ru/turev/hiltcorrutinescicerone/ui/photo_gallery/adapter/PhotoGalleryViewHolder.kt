@@ -14,7 +14,7 @@ class PhotoGalleryViewHolder(
     fun bind(itemPhoto: ItemPhoto) {
         with(binding) {
             Glide.with(imgItemPhotoGallery.context)
-                .load(itemPhoto.regular)
+                .load(itemPhoto.small)
                 .into(imgItemPhotoGallery)
 
             imgInput.text = itemPhoto.name
