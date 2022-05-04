@@ -30,7 +30,6 @@ open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) 
             showLoadErrorNetwork.observe { showSnackbar(R.string.photo_error_network) }
             searchInput.observe(viewModel::onSearchInputUpdate)
             isSearchInputEmpty.observe(::onSubscribedSearchInputEmpty)
-
         }
         with(binding) {
             appBarPhotoGallerySearch.etSearch.doAfterTextChanged { searchInput ->

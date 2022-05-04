@@ -5,4 +5,7 @@
     <string name="photo_error_network">Интеренет не поключен</string>
     <string name="photo_error">Не удалось ничего загрузить</string>
 
+    <string name="image_photo_show_draw">Вы в режиме рисования</string>
+    <string name="image_photo_exit_show_draw">Вы вышли из режима рисования</string>
+
 </resources>

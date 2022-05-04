@@ -3,6 +3,7 @@ package ru.turev.hiltcorrutinescicerone.ui.image_photo
 import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.whenStarted
@@ -15,6 +16,7 @@ import kotlinx.coroutines.withContext
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentImagePhotoBinding
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
+import ru.turev.hiltcorrutinescicerone.extension.showSnackbar
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.view.ImagePhotoView
@@ -31,9 +33,33 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initData()
+        viewModel.run {
+//            showLoadError.observe { showSnackbar(R.string.photo_error) }
+//            showLoadErrorNetwork.observe { showSnackbar(R.string.photo_error_network) }
+//            searchInput.observe(viewModel::onSearchInputUpdate)
+//            isSearchInputEmpty.observe(::onSubscribedSearchInputEmpty)
+            isDraw.observe(::onSubscribedDrawOnClear)
+            showDraw.observe { showSnackbar(R.string.image_photo_show_draw) }
+            showExitDraw.observe { showSnackbar(R.string.image_photo_exit_show_draw) }
+
+        }
         with(binding) {
             appBarImagePhoto.imgBack.setOnClickListener { viewModel.onExit() }
             appBarImagePhoto.tvName.text = itemPhoto.name
+            appBarImagePhoto.imgDraw.setOnClickListener { viewModel.onDraw() }
+            appBarImagePhoto.imgExitDraw.setOnClickListener { viewModel.onExitDraw() }
+        }
+    }
+
+    private fun onSubscribedDrawOnClear(isDraw: Boolean) {
+        with(binding) {
+            if (isDraw) {
+                appBarImagePhoto.imgDraw.isVisible = false
+                appBarImagePhoto.imgExitDraw.isVisible = true
+            } else {
+                appBarImagePhoto.imgDraw.isVisible = true
+                appBarImagePhoto.imgExitDraw.isVisible = false
+            }
         }
     }
 
