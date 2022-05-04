@@ -1,169 +1,134 @@
 package ru.turev.hiltcorrutinescicerone.view
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Matrix
-import android.graphics.Paint
 import android.graphics.PointF
-import android.graphics.Rect
 import android.util.AttributeSet
+import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.appcompat.widget.AppCompatImageView
-import ru.turev.hiltcorrutinescicerone.R
 
 class ImagePhotoView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet,
     defStyleAttr: Int = 0,
-) : AppCompatImageView(context, attrs, defStyleAttr), ScaleGestureDetector.OnScaleGestureListener
-// GestureDetector.OnGestureListener
-{
+) : AppCompatImageView(context, attrs, defStyleAttr), ScaleGestureDetector.OnScaleGestureListener,
+    GestureDetector.OnGestureListener {
 
-    private var bitmap: Bitmap? = null
-    // private var matrix = Matrix()
-
-    private val paint: Paint = Paint().apply { isFilterBitmap = true }
-    private val rect = Rect(0, 0, 0, 0)
-    private var posX = 0f
-    private var posY = 0f
-    private var lastTouchX = 0f
-    private var lastTouchY = 0f
-    private var activePointerId = INVALID_POINTER_ID
-    private val scaleDetector = ScaleGestureDetector(context, this)
-
-    // private val gestureDetector = GestureDetector(context, this)
-    private var scaleFactor = 1f
+    private val scaleGestureDetector = ScaleGestureDetector(context, this)
+    private val gestureDetector = GestureDetector(context, this)
+    private var scaleFactor = 1F
+    private val maxScale = 3F
+    private val minScale = 1F
+    private var matrixByImage = Matrix()
+    private var savedMatrix = Matrix()
+    private var scaling = false
+    private val focusPoint = PointF()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        scaleDetector.onTouchEvent(event)
-        val action = event.action
-        when (action and MotionEvent.ACTION_MASK) {
-            // Жест начинается с события движения, ACTION_DOWN которое указывает местоположение первого указателя вниз
-            MotionEvent.ACTION_DOWN -> {
-                val x = event.x
-                val y = event.y
-                lastTouchX = x
-                lastTouchY = y
-                activePointerId = event.getPointerId(0)
-            }
-            // Движения указателя описываются событиями движения с помощью
-            MotionEvent.ACTION_MOVE -> {
-                val pointerIndex = event.findPointerIndex(activePointerId)
-                val x = event.getX(pointerIndex)
-                val y = event.getY(pointerIndex)
-
-                if (!scaleDetector.isInProgress) {
-                    val dx = x - lastTouchX
-                    val dy = y - lastTouchY
-                    posX += dx
-                    posY += dy
-                    invalidate()
-                }
-                lastTouchX = x
-                lastTouchY = y
-            }
-//            // поднял палец
-            MotionEvent.ACTION_UP -> {
-                activePointerId = INVALID_POINTER_ID
-            }
-            // если палец выходит за пределы экрана
-            MotionEvent.ACTION_CANCEL -> {
-                activePointerId = INVALID_POINTER_ID
-            }
-            // При перемещении каждого дополнительного указателя вниз или вверх
-            MotionEvent.ACTION_POINTER_UP -> {
-                val pointerIndex = (event.action and MotionEvent.ACTION_POINTER_INDEX_MASK
-                        shr MotionEvent.ACTION_POINTER_INDEX_SHIFT)
-                val pointerId = event.getPointerId(pointerIndex)
-                if (pointerId == activePointerId) {
-                    val newPointerIndex = if (pointerIndex == 0) 1 else 0
-                    lastTouchX = event.getX(newPointerIndex)
-                    lastTouchY = event.getY(newPointerIndex)
-                    activePointerId = event.getPointerId(newPointerIndex)
-                }
-            }
+        scaleType = ScaleType.MATRIX
+        matrixByImage.set(imageMatrix)
+        savedMatrix.set(matrixByImage)
+        scaleGestureDetector.onTouchEvent(event)
+        if (!scaling && scaleFactor > 1) {
+            gestureDetector.onTouchEvent(event)
         }
+        imageMatrix = matrixByImage
         return true
     }
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        canvas.save()
-        canvas.translate(posX, posY)
-        // canvas.scale(scaleFactor, scaleFactor) //увеличиват с начальных точек
-        canvas.scale(scaleFactor, scaleFactor, width / 2 * 1f, height / 2 * 1f) // увеличивает с центра
-        bitmap?.let { canvas.drawBitmap(it, rect.left.toFloat(), rect.bottom.toFloat(), paint) }
-        canvas.restore()
+    override fun onScale(detector: ScaleGestureDetector): Boolean {
+        scaleFactor *= detector.scaleFactor
+        focusPoint.set(detector.focusX, detector.focusY)
+        matrixByImage.set(savedMatrix)
+        matrixByImage.postScale(
+            detector.scaleFactor,
+            detector.scaleFactor,
+            focusPoint.x,
+            focusPoint.y
+        )
+        return true
     }
 
-    private fun Bitmap.getPointF(rect: Rect): PointF {
-        return PointF()
+    override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+        scaling = true
+        return true
     }
 
-    private fun Canvas.drawBitmap(
-        bitmap: Bitmap,
-        point: PointF,
-        paint: Paint? = null
-    ) = drawBitmap(bitmap, point.x, point.y, paint)
-
-    // Детектор жестов маштаба
-//    private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-//        override fun onScale(detector: ScaleGestureDetector): Boolean {
-//            scaleFactor *= detector.scaleFactor
-//
-//            scaleFactor = 0.1f.coerceAtLeast(scaleFactor.coerceAtMost(10.0f))
-//            invalidate()
-//            return true
-//        }
-//    }
-
-    companion object {
-        private const val INVALID_POINTER_ID = -1
-    }
-
-    init {
-        // scaleDetector = ScaleGestureDetector(context, ScaleListener())
-        onBackground()
-    }
-
-    private fun onBackground() {
-        if (bitmap == null) {
-            this.background = resources.getDrawable(R.drawable.ic_placeholder_image_photo, null)
-        } else {
-            this.background = null
+    override fun onScaleEnd(detector: ScaleGestureDetector) {
+        val backScale = when {
+            scaleFactor > maxScale -> maxScale / scaleFactor
+            scaleFactor < minScale -> minScale / scaleFactor
+            else -> 1F
         }
+        scaleFactor = scaleFactor.coerceIn(minScale, maxScale)
+        matrixByImage.set(savedMatrix)
+        matrixByImage.postScale(backScale, backScale, focusPoint.x, focusPoint.y)
+        checkBorders()
+        setImageInVerticalCenter()
+        scaling = false
     }
 
-    fun setData(bitmap: Bitmap) {
-        val newBitmap = scaleImage(bitmap, width, height)
-        this.bitmap = newBitmap
-        onBackground()
-        invalidate()
+    override fun onDown(p0: MotionEvent?): Boolean = true
+
+    override fun onShowPress(p0: MotionEvent?) {
+        // ignore
     }
 
-    // функция маштабирует изображение
-    private fun scaleImage(bitmap: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
-        // todo высчет размеров вытягивает изображение
-        val width = bitmap.width
-        val height = bitmap.height
-        val scaleWidth = newWidth.toFloat() / width
-        val scaleHeight = newHeight.toFloat() / height
-        val matrix = Matrix()
-        matrix.postScale(scaleWidth, scaleHeight)
-        return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true)
+    override fun onSingleTapUp(p0: MotionEvent?): Boolean = true
+
+    override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, dx: Float, dy: Float): Boolean {
+        matrixByImage.set(savedMatrix)
+        matrixByImage.postTranslate(-dx, -dy)
+        checkBorders()
+        setImageInVerticalCenter()
+        return true
     }
 
-    override fun onScale(p0: ScaleGestureDetector?): Boolean {
-        TODO("Not yet implemented")
+    override fun onLongPress(p0: MotionEvent?) {
+        // ignore
     }
 
-    override fun onScaleBegin(p0: ScaleGestureDetector?): Boolean {
-        TODO("Not yet implemented")
+    override fun onFling(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean = true
+
+    private fun setImageInVerticalCenter() {
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+        val dy = when {
+            getContentHeight() * scaleFactor < measuredHeight ->
+                0.5F * measuredHeight - values[Matrix.MTRANS_Y] - 0.5F * getContentHeight() * scaleFactor
+            else -> 0F
+        }
+        matrixByImage.postTranslate(0F, dy)
     }
 
-    override fun onScaleEnd(p0: ScaleGestureDetector?) {
-        TODO("Not yet implemented")
+    private fun getContentHeight() =
+        if (measuredHeight * drawable.intrinsicWidth <= measuredWidth * drawable.intrinsicHeight) {
+            measuredHeight
+        } else {
+            drawable.intrinsicHeight * measuredWidth / drawable.intrinsicWidth
+        }
+
+    private fun checkBorders() {
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+        val dx = when {
+            values[Matrix.MTRANS_X] > 0 ->
+                -values[Matrix.MTRANS_X]
+            values[Matrix.MTRANS_X] < measuredWidth - measuredWidth * scaleFactor ->
+                -values[Matrix.MTRANS_X] + (measuredWidth - measuredWidth * scaleFactor)
+            else -> 0F
+        }
+        val dy = when {
+            values[Matrix.MTRANS_Y] > 0 -> {
+                -values[Matrix.MTRANS_Y]
+            }
+            values[Matrix.MTRANS_Y] + getContentHeight() * scaleFactor < measuredHeight -> {
+                measuredHeight - (values[Matrix.MTRANS_Y] + getContentHeight() * scaleFactor)
+            }
+            else -> 0F
+        }
+        matrixByImage.postTranslate(dx, dy)
     }
 }
