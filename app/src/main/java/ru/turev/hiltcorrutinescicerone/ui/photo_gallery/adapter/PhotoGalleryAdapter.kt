@@ -11,7 +11,6 @@ class PhotoGalleryAdapter :
         ListAdapter<ItemPhoto, PhotoGalleryViewHolder>(PhotoGalleryDiffCallback()) {
 
     var onClickListener: ((ItemPhoto) -> Unit) = {}
-    // lateinit var onClickListener: ((ItemPhoto, Unit) -> Unit)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoGalleryViewHolder {
         val binding =

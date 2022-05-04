@@ -1,6 +1,5 @@
 package ru.turev.hiltcorrutinescicerone.ui.image_photo
 
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
@@ -8,6 +7,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.whenStarted
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,18 +42,19 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             whenStarted {
                 binding.imagePhotoView.let { imagePhotoView ->
                     val placeholder = getPlaceholder()
-                    getImagePhotoFull(imagePhotoView, placeholder)
+                    getImagePhotoFull(imagePhotoView)
                 }
             }
         }
     }
 
-    private fun getImagePhotoFull(imagePhotoView: ImagePhotoView, placeholder: Drawable) {
+    private fun getImagePhotoFull(imagePhotoView: ImagePhotoView) {
         Glide.with(requireContext())
             .load(itemPhoto.full)
-            .placeholder(placeholder)
+            //.apply(RequestOptions.overrideOf(800,600))
+            .transition(DrawableTransitionOptions.withCrossFade())
+            // .placeholder(placeholder)
             .into(imagePhotoView)
-
     }
 
     private suspend fun getPlaceholder() = withContext(Dispatchers.IO) {
