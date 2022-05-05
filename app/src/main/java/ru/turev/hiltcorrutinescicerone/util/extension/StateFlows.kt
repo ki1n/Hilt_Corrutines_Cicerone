@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.extension
+package ru.turev.hiltcorrutinescicerone.util.extension
 
 import androidx.lifecycle.LifecycleCoroutineScope
 import kotlinx.coroutines.flow.Flow

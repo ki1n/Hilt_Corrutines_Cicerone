@@ -6,7 +6,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import ru.turev.hiltcorrutinescicerone.R
-import ru.turev.hiltcorrutinescicerone.extension.hideKeyboard
+import ru.turev.hiltcorrutinescicerone.util.extension.hideKeyboard
 
 abstract class BaseFragment(@LayoutRes contentLayoutId: Int) : Fragment(contentLayoutId) {
 

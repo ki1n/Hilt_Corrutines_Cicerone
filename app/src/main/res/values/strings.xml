@@ -7,5 +7,6 @@
 
     <string name="image_photo_show_draw">Вы в режиме рисования</string>
     <string name="image_photo_exit_show_draw">Вы вышли из режима рисования</string>
+    <string name="image_photo_show_clear_draw">Нарисованное очищено</string>
 
 </resources>

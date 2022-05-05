@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.util
+package ru.turev.hiltcorrutinescicerone.util.extension
 
 import android.util.TypedValue
 import android.view.LayoutInflater

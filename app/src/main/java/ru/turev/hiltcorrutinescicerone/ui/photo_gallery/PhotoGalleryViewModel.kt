@@ -13,7 +13,7 @@ import ru.turev.hiltcorrutinescicerone.domain.errors.Resource
 import ru.turev.hiltcorrutinescicerone.domain.repository.PhotoRepository
 import ru.turev.hiltcorrutinescicerone.navigation.Screens
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseViewModel
-import ru.turev.hiltcorrutinescicerone.util.empty
+import ru.turev.hiltcorrutinescicerone.util.extension.empty
 import ru.turev.hiltcorrutinescicerone.util.renderscript.LiveEvent
 import javax.inject.Inject
 

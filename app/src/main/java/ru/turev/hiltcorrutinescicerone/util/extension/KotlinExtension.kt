@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.util
+package ru.turev.hiltcorrutinescicerone.util.extension
 
 inline fun <reified T> Any?.unsafeCastTo(): T {
     return this as T

@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.extension
+package ru.turev.hiltcorrutinescicerone.util.extension
 
 import android.app.Activity
 import android.content.Context

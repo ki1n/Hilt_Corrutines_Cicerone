@@ -1,7 +1,7 @@
 package ru.turev.hiltcorrutinescicerone.data.network.api.response
 
 import com.google.gson.annotations.SerializedName
-import ru.turev.hiltcorrutinescicerone.util.empty
+import ru.turev.hiltcorrutinescicerone.util.extension.empty
 
 data class PhotoResponse(
     @SerializedName("id")

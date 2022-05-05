@@ -5,7 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import ru.turev.hiltcorrutinescicerone.databinding.ItemPhotoGalleryBinding
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
-import ru.turev.hiltcorrutinescicerone.util.setOnDebouncedClickListener
+import ru.turev.hiltcorrutinescicerone.util.extension.setOnDebouncedClickListener
 
 class PhotoGalleryAdapter :
         ListAdapter<ItemPhoto, PhotoGalleryViewHolder>(PhotoGalleryDiffCallback()) {

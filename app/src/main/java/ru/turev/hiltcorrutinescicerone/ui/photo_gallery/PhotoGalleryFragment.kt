@@ -7,7 +7,7 @@ import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentPhotoGalleryBinding
-import ru.turev.hiltcorrutinescicerone.extension.showSnackbar
+import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.adapter.PhotoGalleryAdapter

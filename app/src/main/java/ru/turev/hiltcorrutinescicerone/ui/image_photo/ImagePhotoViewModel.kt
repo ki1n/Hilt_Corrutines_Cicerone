@@ -25,6 +25,9 @@ class ImagePhotoViewModel @Inject constructor(
     val isClearDraw: LiveData<Boolean> get() = _isClearDraw
     private val _isClearDraw = MediatorLiveData<Boolean>()
 
+    val showClearDraw: LiveData<Unit> get() = _showClearDraw
+    private val _showClearDraw = LiveEvent<Unit>()
+
     fun onDraw() {
         _isDraw.value = true
         _showDraw.call()
@@ -36,6 +39,7 @@ class ImagePhotoViewModel @Inject constructor(
     }
 
     fun onClearDraw() {
-        // todo
+        _isClearDraw.value = true
+        _showClearDraw.call()
     }
 }
