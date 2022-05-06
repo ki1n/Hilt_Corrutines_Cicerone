@@ -55,38 +55,32 @@ class ImagePhotoView @JvmOverloads constructor(
         }
         imageMatrix = matrixByImage
 
-//        val pointerIndex =
-//            event.action and MotionEvent.ACTION_POINTER_INDEX_MASK shr MotionEvent.ACTION_POINTER_INDEX_SHIFT
-//        val fingerId = event.getPointerId(pointerIndex)
-
         if (isDrawMode) {
             when (event.action and MotionEvent.ACTION_MASK) {
-                // срабатывает при касании первого пальца
-//                MotionEvent.ACTION_DOWN -> {
-//                    startFocusPoint.set(event.x, event.y) //записать координаты в точки касания
-//                    mode = Mode.DRAG
-//                }
-//                // срабатывает при касании каждого последующего пальца к примеру второй
+                // срабатывает при отпускании каждого пальца кроме последнего
+                MotionEvent.ACTION_POINTER_UP -> {
+                    mode = Mode.NONE
+                }
+                MotionEvent.ACTION_CANCEL,
+                    // срабатывает при отпускании последнего пальца
+                MotionEvent.ACTION_UP,
+                    // срабатывает при касании первого пальца
+                MotionEvent.ACTION_DOWN -> {
+                    val startPoint = PointF(event.x, event.y)
+                    points.add(startPoint)
+                    mode = Mode.DRAG
+                }
+                // срабатывает при касании каждого последующего пальца к примеру второй
                 MotionEvent.ACTION_POINTER_DOWN,
                     // Движение пальца пользователя по экрану
                 MotionEvent.ACTION_MOVE -> {
-                    stopFocusPoint.set(event.x, event.y)
-                    val latestPoint = points.lastOrNull()
-                    val point = PointF(event.x, event.y)
-                    points.add(point)
-
-
-                    latestPoint?.let {
-                        startFocusPoint.set(latestPoint.x, latestPoint.y)
+                    if (mode == Mode.DRAG) {
+                        stopFocusPoint.set(event.x, event.y)
+                        val latestPoint = points.lastOrNull()
+                        val point = PointF(event.x, event.y)
+                        points.add(point)
+                        latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
                     }
-                }
-                // срабатывает при отпускании каждого пальца кроме последнего
-                MotionEvent.ACTION_POINTER_UP,
-                MotionEvent.ACTION_CANCEL,
-                    // срабатывает при отпускании последнего пальца
-                MotionEvent.ACTION_UP -> {
-//                    startFocusPoint.set(event.x, event.y)
-//                    invalidate()
                 }
             }
         }
@@ -95,14 +89,16 @@ class ImagePhotoView @JvmOverloads constructor(
 
     private fun drawLinePatch(canvas: Canvas) {
         canvas.save()
+        // ставит «курсор» в указанную точку, рисование пойдет от нее
         patch.moveTo(
             startFocusPoint.x,
             startFocusPoint.y
-        ) // ставит «курсор» в указанную точку. Далее рисование пойдет от нее
+        )
+        // рисует линию от текущей точки до указанной, следующее рисование пойдет уже от указанной точки
         patch.lineTo(
             stopFocusPoint.x,
             stopFocusPoint.y
-        ) // рисует линию от текущей точки до указанной, следующее рисование пойдет уже от указанной точки
+        )
         canvas.drawPath(patch, paintLine)
         patch.close()
         canvas.save()
@@ -114,9 +110,9 @@ class ImagePhotoView @JvmOverloads constructor(
             patch.reset()
             invalidate()
             isClearPatch = false
+            points.clear()
             startFocusPoint.set(0f, 0f)
             stopFocusPoint.set(0f, 0f)
-            invalidate()
         }
     }
 
