@@ -7,7 +7,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -15,6 +14,7 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.appcompat.widget.AppCompatImageView
 import ru.turev.hiltcorrutinescicerone.R
+import ru.turev.hiltcorrutinescicerone.domain.enums.Mode
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
 
 class ImagePhotoView @JvmOverloads constructor(
@@ -33,18 +33,19 @@ class ImagePhotoView @JvmOverloads constructor(
     private var savedMatrix = Matrix()
     private var isScaling = false
     private val focusPoint = PointF()
-    private val startFocusPoint = PointF()
+    private val startFocusPoint = PointF() // точка первого пальца нажата
     private val stopFocusPoint = PointF()
     private var isDrawMode = false // эта переменная для включения режима рисования
     private var isClearPatch = false // переменная для очистки того что нарисовал
     private val paintLine = Paint()
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.dp_2)
-    private val currentLine = mutableListOf<PointF>()
+    private val points = mutableListOf<PointF>()
     private var patch = Path()
+    private var minDrivingDistance = 1f
+    private var mode = Mode.NONE
 
-    // здесь onTouchEvent можно только собирать данные
+    // здесь можно только собирать данные
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val action = event.action
         scaleType = ScaleType.MATRIX
         matrixByImage.set(imageMatrix)
         savedMatrix.set(matrixByImage)
@@ -54,74 +55,41 @@ class ImagePhotoView @JvmOverloads constructor(
         }
         imageMatrix = matrixByImage
 
+//        val pointerIndex =
+//            event.action and MotionEvent.ACTION_POINTER_INDEX_MASK shr MotionEvent.ACTION_POINTER_INDEX_SHIFT
+//        val fingerId = event.getPointerId(pointerIndex)
+
         if (isDrawMode) {
-            when (action and MotionEvent.ACTION_MASK) {
+            when (event.action and MotionEvent.ACTION_MASK) {
                 // срабатывает при касании первого пальца
 //                MotionEvent.ACTION_DOWN -> {
 //                    startFocusPoint.set(event.x, event.y) //записать координаты в точки касания
-//                    Log.d("t", "ACTION_DOWN   x = ${event.x}, y = ${event.y}")
-//                    invalidate()
+//                    mode = Mode.DRAG
 //                }
-                // Движение пальца пользователя по экрану
+//                // срабатывает при касании каждого последующего пальца к примеру второй
+                MotionEvent.ACTION_POINTER_DOWN,
+                    // Движение пальца пользователя по экрану
                 MotionEvent.ACTION_MOVE -> {
                     stopFocusPoint.set(event.x, event.y)
+                    val latestPoint = points.lastOrNull()
+                    val point = PointF(event.x, event.y)
+                    points.add(point)
 
-                    val historySize = event.historySize
-                    val pointerCount = event.pointerCount
 
-                    for (h in 0 until historySize) {
-                        for (p in 0 until pointerCount) {
-                            startFocusPoint.set(event.getHistoricalX(p), event.getHistoricalY(p))
-                        }
+                    latestPoint?.let {
+                        startFocusPoint.set(latestPoint.x, latestPoint.y)
                     }
-                    //startFocusPoint.set(stopFocusPoint.x, stopFocusPoint.y)
-                    //canvas.drawLine(focusPoint.x, focusPoint.y, stopX, stopY, paintLine)
-                    //  startFocusPoint.set(event.x, event.y)
-                    // canvas.setMatrix(savedMatrix) // добавил для показа
-                    invalidate()
-                }
-                // срабатывает при касании каждого последующего пальца к примеру второй
-                MotionEvent.ACTION_POINTER_DOWN -> {
-                    Log.d("t", "ACTION_POINTER_DOWN   x = ${event.x}, y = ${event.y}")
-//                    stopFocusPoint.set(event.x, event.y)
-//                    val historySize = event.historySize
-//                    val pointerCount = event.pointerCount
-//
-//                    for (h in 0 until historySize) {
-//                        for (p in 0 until pointerCount) {
-//                            startFocusPoint.set(event.getHistoricalX(p, h), event.getHistoricalY(p, h))
-//                        }
-//                    }
-//                    invalidate()
                 }
                 // срабатывает при отпускании каждого пальца кроме последнего
-                MotionEvent.ACTION_POINTER_UP -> {
-                    Log.d("t", "ACTION_POINTER_UP   x = ${event.x}, y = ${event.y}")
-//                    stopFocusPoint.set(event.x, event.y)
-//                    val historySize = event.historySize
-//                    val pointerCount = event.pointerCount
-//
-//                    for (h in 0 until historySize) {
-//                        for (p in 0 until pointerCount) {
-//                            startFocusPoint.set(event.getHistoricalX(p, h), event.getHistoricalY(p, h))
-//                        }
-//                    }
-//                    invalidate()
-                }
-
-                // срабатывает при отпускании последнего пальца
-//                MotionEvent.ACTION_UP -> {
+                MotionEvent.ACTION_POINTER_UP,
+                MotionEvent.ACTION_CANCEL,
+                    // срабатывает при отпускании последнего пальца
+                MotionEvent.ACTION_UP -> {
 //                    startFocusPoint.set(event.x, event.y)
 //                    invalidate()
-//                }
-//                MotionEvent.ACTION_CANCEL -> {
-//                    stopFocusPoint.set(event.x, event.y)
-//                    invalidate()
-//                }
+                }
             }
         }
-
-        invalidate()
         return true
     }
 
@@ -135,53 +103,11 @@ class ImagePhotoView @JvmOverloads constructor(
             stopFocusPoint.x,
             stopFocusPoint.y
         ) // рисует линию от текущей точки до указанной, следующее рисование пойдет уже от указанной точки
-//        patch.moveTo(
-//            startFocusPoint.x,
-//            startFocusPoint.y
-//        ) //  ставит «курсор» в указанную точку. Далее рисование пойдет от нее
-
         canvas.drawPath(patch, paintLine)
         patch.close()
-
         canvas.save()
         invalidate()
     }
-
-//    private fun drawLinePatch(canvas: Canvas) = launch {
-//        // patch.reset() // очистка patch
-//        withContext(Dispatchers.IO) {
-//            if (currentLine.size > 0) {
-//                for (point in 1..currentLine.size) {
-////                    patch.moveTo(
-////                        startFocusPoint.x,
-////                        startFocusPoint.y
-////                    ) // ставит «курсор» в указанную точку. Далее рисование пойдет от нее
-////                    patch.lineTo(
-////                       	 currentLine[point].x,
-////                        currentLine[point].y
-////                    ) // рисует линию от текущей точки до указанной, следующее рисование пойдет уже от указанной точки
-////                    patch.moveTo(
-////                        startFocusPoint.x,
-////                        startFocusPoint.y
-////                    ) //  ставит «курсор» в указанную точку. Далее рисование пойдет от нее
-//
-//                    canvas.drawLine(currentLine[point].x, currentLine[point].y, currentLine[point + 1].x, currentLine[point + 1].y, paintLine)
-//
-//                    //  canvas.drawPath(patch, paintLine)
-//                    // patch.close()
-//                }
-//            }
-//            canvas.save()
-//            invalidate()
-//        }
-//    }
-//
-//
-////    if(points.size()>0){
-////        for(int x = 0;x<points.size()-1;x++){
-////            c.drawLine(points.get(x).getX(), points.get(x).getY(), points.get(x+1).getX(), points.get(x+1).getY(), p);
-////        }
-////    }
 
     private fun clearPath() {
         if (isClearPatch) {
@@ -211,7 +137,6 @@ class ImagePhotoView @JvmOverloads constructor(
         super.onDraw(canvas)
         drawLinePatch(canvas)
         clearPath()
-        invalidate()
     }
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
