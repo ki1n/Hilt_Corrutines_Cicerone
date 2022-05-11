@@ -28,6 +28,12 @@ class ImagePhotoViewModel @Inject constructor(
     val showClearDraw: LiveData<Unit> get() = _showClearDraw
     private val _showClearDraw = LiveEvent<Unit>()
 
+    val isSave: LiveData<Boolean> get() = _isSave
+    private val _isSave = MediatorLiveData<Boolean>()
+
+    val showSave: LiveData<Unit> get() = _showSave
+    private val _showSave = LiveEvent<Unit>()
+
     fun onDraw() {
         _isDraw.value = true
         _showDraw.call()
@@ -41,5 +47,9 @@ class ImagePhotoViewModel @Inject constructor(
     fun onClearDraw() {
         _isClearDraw.value = true
         _showClearDraw.call()
+    }
+
+    fun onSaveImage() {
+        _showSave.call()
     }
 }

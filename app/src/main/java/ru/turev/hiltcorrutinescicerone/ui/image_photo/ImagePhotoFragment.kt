@@ -1,5 +1,7 @@
 package ru.turev.hiltcorrutinescicerone.ui.image_photo
 
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
@@ -8,7 +10,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.whenStarted
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,6 +42,7 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             showExitDraw.observe { showSnackbar(R.string.image_photo_exit_show_draw) }
             isClearDraw.observe(::onSubscribedClearDraw)
             showClearDraw.observe { showSnackbar(R.string.image_photo_show_clear_draw) }
+            showSave.observe { showSnackbar(R.string.image_photo_show_save) }
         }
         with(binding) {
             appBarImagePhoto.imgBack.setOnClickListener { viewModel.onExit() }
@@ -46,6 +50,7 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             appBarImagePhoto.imgDraw.setOnClickListener { viewModel.onDraw() }
             appBarImagePhoto.imgExitDraw.setOnClickListener { viewModel.onExitDraw() }
             appBarImagePhoto.imgClear.setOnClickListener { viewModel.onClearDraw() }
+            appBarImagePhoto.imgSave.setOnClickListener { saveImage() }
         }
     }
 
@@ -72,24 +77,41 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
         lifecycleScope.launch {
             whenStarted {
                 binding.imagePhotoView.let { imagePhotoView ->
-                    val placeholder = getPlaceholder()
+                    //  val placeholder = getPlaceholder()
+                    getBitmap()
                     getImagePhotoFull(imagePhotoView)
                 }
             }
         }
     }
 
+    private fun saveImage() {
+        viewModel.onSaveImage()
+        binding.imagePhotoView.saveImage()
+    }
+
     private fun getImagePhotoFull(imagePhotoView: ImagePhotoView) {
         Glide.with(requireContext())
+            .asBitmap()
             .load(itemPhoto.full)
-            //.apply(RequestOptions.overrideOf(800,600))
-            .transition(DrawableTransitionOptions.withCrossFade())
+            // .transition(DrawableTransitionOptions.withCrossFade())
             // .placeholder(placeholder)
             .into(imagePhotoView)
     }
 
     private suspend fun getPlaceholder() = withContext(Dispatchers.IO) {
         return@withContext Glide.with(requireContext()).asDrawable().load(itemPhoto.small).submit().get()
+    }
+
+    private suspend fun getBitmap() = withContext(Dispatchers.IO) {
+        Glide.with(binding.imagePhotoView.context).asBitmap().load(itemPhoto.full)
+            .into(object : CustomTarget<Bitmap>() {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    binding.imagePhotoView.setIsLoadedImage(true, resource)
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {}
+            })
     }
 
     companion object {

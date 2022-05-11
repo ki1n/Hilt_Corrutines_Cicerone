@@ -1,34 +1,50 @@
 package ru.turev.hiltcorrutinescicerone.view
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.appcompat.widget.AppCompatImageView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.domain.enums.Mode
+import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
+import kotlin.coroutines.CoroutineContext
+
 
 class ImagePhotoView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet,
-    defStyleAttr: Int = 0,
+    defStyleAttr: Int = 0
 ) : AppCompatImageView(context, attrs, defStyleAttr), ScaleGestureDetector.OnScaleGestureListener,
-    GestureDetector.OnGestureListener {
+    GestureDetector.OnGestureListener, CoroutineScope {
+
+    override val coroutineContext: CoroutineContext = Dispatchers.Default
+
+//    @Inject
+//    var imageHelper = ImageHelper()
+
+    companion object {
+        private const val MAX_SCALE = 5f
+        private const val MIN_SCALE = 1f
+        private const val MY_ALBUM = "albumName"
+    }
 
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
     private val gestureDetector = GestureDetector(context, this)
-    private var scaleFactor = 1F
-    private val maxScale = 3F
-    private val minScale = 1F
+    private var scaleFactor = 1f
     private var matrixByImage = Matrix()
     private var savedMatrix = Matrix()
     private var isScaling = false
@@ -41,8 +57,10 @@ class ImagePhotoView @JvmOverloads constructor(
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.dp_2)
     private val points = mutableListOf<PointF>()
     private var patch = Path()
-    private var minDrivingDistance = 1f
     private var mode = Mode.NONE
+    private var isLoaded = false
+    private lateinit var bitmap: Bitmap
+    // rect: Rect = Rect(0, 0, width, height),
 
     // здесь можно только собирать данные
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -57,10 +75,6 @@ class ImagePhotoView @JvmOverloads constructor(
 
         if (isDrawMode) {
             when (event.action and MotionEvent.ACTION_MASK) {
-                // срабатывает при отпускании каждого пальца кроме последнего
-                MotionEvent.ACTION_POINTER_UP -> {
-                    mode = Mode.NONE
-                }
                 MotionEvent.ACTION_CANCEL,
                     // срабатывает при отпускании последнего пальца
                 MotionEvent.ACTION_UP,
@@ -74,6 +88,7 @@ class ImagePhotoView @JvmOverloads constructor(
                 MotionEvent.ACTION_POINTER_DOWN,
                     // Движение пальца пользователя по экрану
                 MotionEvent.ACTION_MOVE -> {
+                    val i = event.getPointerId(0)
                     if (mode == Mode.DRAG) {
                         stopFocusPoint.set(event.x, event.y)
                         val latestPoint = points.lastOrNull()
@@ -82,6 +97,10 @@ class ImagePhotoView @JvmOverloads constructor(
                         latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
                     }
                 }
+                // срабатывает при отпускании каждого пальца кроме последнего
+                MotionEvent.ACTION_POINTER_UP -> {
+                    mode = Mode.NONE
+                }
             }
         }
         return true
@@ -89,16 +108,8 @@ class ImagePhotoView @JvmOverloads constructor(
 
     private fun drawLinePatch(canvas: Canvas) {
         canvas.save()
-        // ставит «курсор» в указанную точку, рисование пойдет от нее
-        patch.moveTo(
-            startFocusPoint.x,
-            startFocusPoint.y
-        )
-        // рисует линию от текущей точки до указанной, следующее рисование пойдет уже от указанной точки
-        patch.lineTo(
-            stopFocusPoint.x,
-            stopFocusPoint.y
-        )
+        patch.moveTo(startFocusPoint.x, startFocusPoint.y)
+        patch.lineTo(stopFocusPoint.x, stopFocusPoint.y)
         canvas.drawPath(patch, paintLine)
         patch.close()
         canvas.save()
@@ -116,17 +127,40 @@ class ImagePhotoView @JvmOverloads constructor(
         }
     }
 
-//    private fun drawLineEvent(canvas: Canvas) {
-//        //  canvas.save()
-//        //  val values = FloatArray(9)
-//        // matrixByImage.getValues(values)
-//        // matrixByImage.set(savedMatrix)
-//        //  canvas.translate(values[Matrix.MTRANS_X], values[Matrix.MTRANS_Y])
-//        // canvas.scale(values[Matrix.MTRANS_X], values[Matrix.MTRANS_Y])
-//        canvas.drawLine(startFocusPoint.x, startFocusPoint.y, stopFocusPoint.x, stopFocusPoint.y, paintLine)
-//        canvas.restore()
-//        invalidate()
-//    }
+    private fun screenShot(): Bitmap? {
+        val bitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        this.draw(canvas)
+        Log.d("qqq", "bitmap : $bitmap")
+        return bitmap
+    }
+
+    fun setIsLoadedImage(isLoaded: Boolean, bitmap: Bitmap) {
+        this.isLoaded = isLoaded
+        if (isLoaded) {
+            try {
+                this@ImagePhotoView.bitmap = bitmap
+                val w = bitmap.width
+                val h = bitmap.height
+                Log.d("qqq", "w : $w, h : $h")
+            } catch (e: Exception) {
+                Log.d("qqq", "bitmap e : ${e.message}")
+            }
+        }
+    }
+
+    fun saveImage() {
+        ImageHelper.saveToGallery(context, bitmap, MY_ALBUM)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        // todo
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
 
     override fun onDraw(canvas: Canvas) {
         clearPath()
@@ -159,11 +193,11 @@ class ImagePhotoView @JvmOverloads constructor(
     override fun onScaleEnd(detector: ScaleGestureDetector) {
         if (!isDrawMode) {
             val backScale = when {
-                scaleFactor > maxScale -> maxScale / scaleFactor
-                scaleFactor < minScale -> minScale / scaleFactor
+                scaleFactor > MAX_SCALE -> MAX_SCALE / scaleFactor
+                scaleFactor < MIN_SCALE -> MIN_SCALE / scaleFactor
                 else -> 1F
             }
-            scaleFactor = scaleFactor.coerceIn(minScale, maxScale)
+            scaleFactor = scaleFactor.coerceIn(MIN_SCALE, MAX_SCALE)
             matrixByImage.set(savedMatrix)
             matrixByImage.postScale(backScale, backScale, focusPoint.x, focusPoint.y)
             checkBorders()
