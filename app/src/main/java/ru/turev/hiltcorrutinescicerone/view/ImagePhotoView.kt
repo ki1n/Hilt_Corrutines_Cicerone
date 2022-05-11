@@ -150,6 +150,9 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     fun saveImage() {
+        val bitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        this.draw(canvas)
         ImageHelper.saveToGallery(context, bitmap, MY_ALBUM)
     }
 
@@ -160,6 +163,7 @@ class ImagePhotoView @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+            // todo
     }
 
     override fun onDraw(canvas: Canvas) {
