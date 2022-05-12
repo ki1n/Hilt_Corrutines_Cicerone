@@ -19,7 +19,7 @@ import kotlin.coroutines.CoroutineContext
 
 object ImageHelper : CoroutineScope {
 
-    override val coroutineContext: CoroutineContext = Dispatchers.IO
+    override val coroutineContext: CoroutineContext = Dispatchers.Default
 
     fun saveToGallery(context: Context, bitmap: Bitmap, albumName: String) = launch {
         io {

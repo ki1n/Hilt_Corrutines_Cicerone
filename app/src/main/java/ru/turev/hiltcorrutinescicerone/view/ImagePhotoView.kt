@@ -19,7 +19,6 @@ import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.domain.enums.Mode
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
-import kotlin.math.abs
 
 
 class ImagePhotoView @JvmOverloads constructor(
@@ -53,10 +52,11 @@ class ImagePhotoView @JvmOverloads constructor(
     private var mode = Mode.NONE
     private var isLoaded = false
     private lateinit var bitmap: Bitmap
-    // rect: Rect = Rect(0, 0, width, height)
 
-    private var isStart = isEventToMatrix(startFocusPoint.x, startFocusPoint.y)
-    private var isStop = isEventToMatrix(stopFocusPoint.x, stopFocusPoint.y)
+    // todo
+    private var topPoint = 0f
+    private var lowPoint = 0f
+    private var lowerRightPoint = 0f
 
     // здесь можно только собирать данные
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -69,15 +69,24 @@ class ImagePhotoView @JvmOverloads constructor(
         }
         imageMatrix = matrixByImage
 
+//        val values = FloatArray(9)
+//        matrixByImage.getValues(values)
+//
+//        topPoint = values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]
+//        lowPoint = abs(values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]))
+//        lowerRightPoint = values[Matrix.MSCALE_X] * this.width
+
         if (isDrawMode) {
+            updateDataValuesMatrix()
+
             when (event.action and MotionEvent.ACTION_MASK) {
                 MotionEvent.ACTION_CANCEL,
                     // срабатывает при отпускании последнего пальца
                 MotionEvent.ACTION_UP,
                     // срабатывает при касании первого пальца
                 MotionEvent.ACTION_DOWN -> {
-                    isStart = isEventToMatrix(event.x, event.y)
-                    if (isStart) {
+                    val isPoint = isEventToMatrix(event.x, event.y)
+                    if (isPoint) {
                         val startPoint = PointF(event.x, event.y)
                         points.add(startPoint)
                         mode = Mode.DRAG
@@ -87,14 +96,14 @@ class ImagePhotoView @JvmOverloads constructor(
                 MotionEvent.ACTION_POINTER_DOWN,
                     // Движение пальца пользователя по экрану
                 MotionEvent.ACTION_MOVE -> {
-                    isStart = isEventToMatrix(event.x, event.y)
-                    if (!isStart) {
+                    val isPoint = isEventToMatrix(event.x, event.y)
+                    if (!isPoint) {
                         points.clear()
                         val point = PointF(event.x, event.y)
                         points.add(point)
                     }
 
-                    if (mode == Mode.DRAG && isStart) {
+                    if (mode == Mode.DRAG && isPoint) {
                         stopFocusPoint.set(event.x, event.y)
                         val latestPoint = points.lastOrNull()
                         val point = PointF(event.x, event.y)
@@ -111,19 +120,30 @@ class ImagePhotoView @JvmOverloads constructor(
         return true
     }
 
-    private fun isEventToMatrix(x: Float, y: Float): Boolean {
+    private fun updateDataValuesMatrix() {
         val values = FloatArray(9)
-        savedMatrix.getValues(values)
-        val topPoint = values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]
-        val lowPoint = abs(values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]))
-        val lowerRightPoint = values[Matrix.MSCALE_X] * this.width
+        matrixByImage.getValues(values)
 
-        if (y in topPoint..lowPoint) {
-            if (x in 0f..lowerRightPoint) {
-                return true
-            }
+        if (scaleFactor == 1f) {
+            topPoint = values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]
+            lowPoint = values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X])
+            lowerRightPoint = values[Matrix.MSCALE_X] * this.width
         }
 
+        if (scaleFactor > 1f) {
+            topPoint = values[Matrix.MTRANS_Y]
+            lowPoint = this.height - (values[Matrix.MTRANS_Y])
+            lowerRightPoint = values[Matrix.MSCALE_X] * this.width + values[Matrix.MTRANS_X]
+        }
+    }
+
+
+    private fun isEventToMatrix(x: Float, y: Float): Boolean {
+        updateDataValuesMatrix()
+
+        if (y in topPoint..lowPoint) {
+            if (x in 0f..lowerRightPoint) return true
+        }
         return false
     }
 
@@ -219,6 +239,7 @@ class ImagePhotoView @JvmOverloads constructor(
             matrixByImage.postScale(backScale, backScale, focusPoint.x, focusPoint.y)
             checkBorders()
             setImageInVerticalCenter()
+
             isScaling = false
         }
     }
