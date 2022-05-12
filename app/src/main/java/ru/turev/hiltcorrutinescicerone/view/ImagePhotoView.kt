@@ -15,13 +15,10 @@ import android.view.ScaleGestureDetector
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.appcompat.widget.AppCompatImageView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.domain.enums.Mode
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
-import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 
 
@@ -30,12 +27,7 @@ class ImagePhotoView @JvmOverloads constructor(
     attrs: AttributeSet,
     defStyleAttr: Int = 0
 ) : AppCompatImageView(context, attrs, defStyleAttr), ScaleGestureDetector.OnScaleGestureListener,
-    GestureDetector.OnGestureListener, CoroutineScope {
-
-    override val coroutineContext: CoroutineContext = Dispatchers.Default
-
-//    @Inject
-//    var imageHelper = ImageHelper()
+    GestureDetector.OnGestureListener {
 
     companion object {
         private const val MAX_SCALE = 5f
@@ -89,7 +81,6 @@ class ImagePhotoView @JvmOverloads constructor(
                         isEventToMatrix(event.x, event.y)
                         mode = Mode.DRAG
                     }
-                    invalidate()
                 }
                 // срабатывает при касании каждого последующего пальца к примеру второй
                 MotionEvent.ACTION_POINTER_DOWN,
@@ -103,7 +94,6 @@ class ImagePhotoView @JvmOverloads constructor(
                         points.add(point)
                         latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
                     }
-                    invalidate()
                 }
                 // срабатывает при отпускании каждого пальца кроме последнего
                 MotionEvent.ACTION_POINTER_UP -> {
@@ -121,33 +111,14 @@ class ImagePhotoView @JvmOverloads constructor(
         val lowPoint = abs(values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]))
         val lowerRightPoint = values[Matrix.MSCALE_X] * this.width
 
-        if (y in lowPoint..topPoint) {
+        val xx1 = x
+        val yy2 = y
+
+        if (y in topPoint..lowPoint) {
             if (x in 0f..lowerRightPoint) {
                 return true
             }
         }
-
-        val globalX = values[Matrix.MTRANS_X]
-        val globalY = values[Matrix.MTRANS_Y]
-        val width2 = values[Matrix.MSCALE_X]
-        val height2 = values[Matrix.MSCALE_Y]
-        val width = values[Matrix.MSCALE_X] * this.width
-        val height = values[Matrix.MSCALE_Y] * this.height
-
-        val xx = x
-        val yy = y
-
-        val fff1 = values[Matrix.MPERSP_1]
-        val fff2 = values[Matrix.MPERSP_0]
-        val fff3 = values[Matrix.MPERSP_2]
-
-        val ee1 = values[Matrix.MSKEW_X]
-        val ee2 = values[Matrix.MSKEW_Y]
-
-        val sdsds = 0
-
-        // val width = values[Matrix.MSCALE_X] * imageWidth
-        // val height = values[Matrix.MSCALE_Y] * imageHeight
 
         return false
     }
