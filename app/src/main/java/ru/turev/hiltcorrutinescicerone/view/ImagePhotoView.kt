@@ -55,6 +55,9 @@ class ImagePhotoView @JvmOverloads constructor(
     private lateinit var bitmap: Bitmap
     // rect: Rect = Rect(0, 0, width, height)
 
+    private var isStart = isEventToMatrix(startFocusPoint.x, startFocusPoint.y)
+    private var isStop = isEventToMatrix(stopFocusPoint.x, stopFocusPoint.y)
+
     // здесь можно только собирать данные
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleType = ScaleType.MATRIX
@@ -73,12 +76,10 @@ class ImagePhotoView @JvmOverloads constructor(
                 MotionEvent.ACTION_UP,
                     // срабатывает при касании первого пальца
                 MotionEvent.ACTION_DOWN -> {
-                    val isPoint = isEventToMatrix(event.x, event.y)
-                    if (isPoint) {
+                    isStart = isEventToMatrix(event.x, event.y)
+                    if (isStart) {
                         val startPoint = PointF(event.x, event.y)
                         points.add(startPoint)
-
-                        isEventToMatrix(event.x, event.y)
                         mode = Mode.DRAG
                     }
                 }
@@ -86,8 +87,14 @@ class ImagePhotoView @JvmOverloads constructor(
                 MotionEvent.ACTION_POINTER_DOWN,
                     // Движение пальца пользователя по экрану
                 MotionEvent.ACTION_MOVE -> {
-                    val isPoint = isEventToMatrix(event.x, event.y)
-                    if (mode == Mode.DRAG && isPoint) {
+                    isStart = isEventToMatrix(event.x, event.y)
+                    if (!isStart) {
+                        points.clear()
+                        val point = PointF(event.x, event.y)
+                        points.add(point)
+                    }
+
+                    if (mode == Mode.DRAG && isStart) {
                         stopFocusPoint.set(event.x, event.y)
                         val latestPoint = points.lastOrNull()
                         val point = PointF(event.x, event.y)
@@ -110,9 +117,6 @@ class ImagePhotoView @JvmOverloads constructor(
         val topPoint = values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]
         val lowPoint = abs(values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]))
         val lowerRightPoint = values[Matrix.MSCALE_X] * this.width
-
-        val xx1 = x
-        val yy2 = y
 
         if (y in topPoint..lowPoint) {
             if (x in 0f..lowerRightPoint) {
