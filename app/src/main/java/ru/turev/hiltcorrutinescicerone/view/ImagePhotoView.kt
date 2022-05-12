@@ -69,16 +69,7 @@ class ImagePhotoView @JvmOverloads constructor(
         }
         imageMatrix = matrixByImage
 
-//        val values = FloatArray(9)
-//        matrixByImage.getValues(values)
-//
-//        topPoint = values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]
-//        lowPoint = abs(values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]))
-//        lowerRightPoint = values[Matrix.MSCALE_X] * this.width
-
         if (isDrawMode) {
-            updateDataValuesMatrix()
-
             when (event.action and MotionEvent.ACTION_MASK) {
                 MotionEvent.ACTION_CANCEL,
                     // срабатывает при отпускании последнего пальца
@@ -136,7 +127,6 @@ class ImagePhotoView @JvmOverloads constructor(
             lowerRightPoint = values[Matrix.MSCALE_X] * this.width + values[Matrix.MTRANS_X]
         }
     }
-
 
     private fun isEventToMatrix(x: Float, y: Float): Boolean {
         updateDataValuesMatrix()
