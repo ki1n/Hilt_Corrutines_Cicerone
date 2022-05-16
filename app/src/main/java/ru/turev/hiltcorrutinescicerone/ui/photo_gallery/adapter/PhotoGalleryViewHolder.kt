@@ -9,13 +9,13 @@ class PhotoGalleryViewHolder(
     private val binding: ItemPhotoGalleryBinding,
 ) : RecyclerView.ViewHolder(binding.root) {
 
-    val item = binding.imgItemPhotoGallery
+    val item = binding.imgItemPhoto
 
     fun bind(itemPhoto: ItemPhoto) {
         with(binding) {
-            Glide.with(imgItemPhotoGallery.context)
+            Glide.with(imgItemPhoto.context)
                 .load(itemPhoto.small)
-                .into(imgItemPhotoGallery)
+                .into(imgItemPhoto)
 
             imgInput.text = itemPhoto.name
         }

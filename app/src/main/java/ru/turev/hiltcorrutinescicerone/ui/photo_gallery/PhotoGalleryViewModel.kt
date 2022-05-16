@@ -39,8 +39,7 @@ class PhotoGalleryViewModel @Inject constructor(
     private val _isSearchInputEmpty = MediatorLiveData<Boolean>()
 
     companion object {
-        private const val STANDARD_QUANTITY = 20
-        // private const val INITIAL_VALUE = 1
+        private const val STANDARD_REQUEST_IMAGES = 20
     }
 
     init {
@@ -68,7 +67,7 @@ class PhotoGalleryViewModel @Inject constructor(
 
     private fun getAllPhotos() {
         viewModelScope.launch(Dispatchers.Main) {
-            when (val result = photoRepository.getAllPhotos(STANDARD_QUANTITY)) {
+            when (val result = photoRepository.getAllPhotos(STANDARD_REQUEST_IMAGES)) {
                 is Resource.NetworkError -> _showLoadErrorNetwork.call()
                 is Resource.Error -> _showLoadError.call()
                 is Resource.Success -> setPhotos(result.data)
@@ -78,7 +77,7 @@ class PhotoGalleryViewModel @Inject constructor(
 
     private fun getSearchPhotos(searchInput: String) {
         viewModelScope.launch(Dispatchers.Main) {
-            when (val result = photoRepository.getSearchPhotos(searchInput, STANDARD_QUANTITY)) {
+            when (val result = photoRepository.getSearchPhotos(searchInput, STANDARD_REQUEST_IMAGES)) {
                 is Resource.NetworkError -> _showLoadErrorNetwork.call()
                 is Resource.Error -> _showLoadError.call()
                 is Resource.Success -> setPhotos(result.data)

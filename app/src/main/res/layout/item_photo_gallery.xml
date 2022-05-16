@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <ImageView android:id="@+id/imgItemPhotoGallery"
+    <ImageView android:id="@+id/imgItemPhoto"
         android:layout_width="match_parent"
         android:layout_height="300sp"
         android:scaleType="center"
@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:alpha="0.5"
         android:background="@color/black_grey"
-        app:layout_constraintBottom_toBottomOf="@+id/imgItemPhotoGallery"
+        app:layout_constraintBottom_toBottomOf="@+id/imgItemPhoto"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
