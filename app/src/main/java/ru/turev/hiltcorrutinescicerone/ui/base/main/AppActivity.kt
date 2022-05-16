@@ -25,7 +25,6 @@ class AppActivity : AppCompatActivity() {
         setContentView(R.layout.activity_app)
 
         appViewModel.startNavigation()
-        if (supportFragmentManager.fragments.isEmpty()) appViewModel.startNavigation()
     }
 
     override fun onResumeFragments() {

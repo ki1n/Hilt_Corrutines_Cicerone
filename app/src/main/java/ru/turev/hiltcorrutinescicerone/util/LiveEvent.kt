@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.util.renderscript
+package ru.turev.hiltcorrutinescicerone.util
 
 import androidx.annotation.MainThread
 import androidx.lifecycle.LifecycleOwner

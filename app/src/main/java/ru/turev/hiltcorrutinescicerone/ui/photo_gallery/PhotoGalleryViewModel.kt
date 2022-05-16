@@ -13,8 +13,8 @@ import ru.turev.hiltcorrutinescicerone.domain.errors.Resource
 import ru.turev.hiltcorrutinescicerone.domain.repository.PhotoRepository
 import ru.turev.hiltcorrutinescicerone.navigation.Screens
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseViewModel
-import ru.turev.hiltcorrutinescicerone.util.extension.empty
-import ru.turev.hiltcorrutinescicerone.util.renderscript.LiveEvent
+import ru.turev.hiltcorrutinescicerone.util.LiveEvent
+import ru.turev.hiltcorrutinescicerone.util.constants.Constants
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,12 +38,18 @@ class PhotoGalleryViewModel @Inject constructor(
     val isSearchInputEmpty: LiveData<Boolean> get() = _isSearchInputEmpty
     private val _isSearchInputEmpty = MediatorLiveData<Boolean>()
 
+    companion object {
+        private const val STANDARD_QUANTITY = 20
+        // private const val INITIAL_VALUE = 1
+    }
+
+    init {
+        getAllPhotos()
+    }
+
     private fun setPhotos(photos: List<ItemPhoto>) {
         _photos.postValue(photos)
     }
-
-    fun onDetailPhotoGalleryScreen(itemPhoto: ItemPhoto) =
-        router.navigateTo(Screens.detailPhotoGalleryScreen(itemPhoto))
 
     fun onDetailPhotoGalleryViewScreen(itemPhoto: ItemPhoto) =
         router.navigateTo(Screens.detailPhotoGalleryViewScreen(itemPhoto))
@@ -54,15 +60,15 @@ class PhotoGalleryViewModel @Inject constructor(
     }
 
     fun onClear() {
-        _searchInput.postValue(String.empty)
+        _searchInput.postValue(Constants.STRING_EMPTY)
         _isSearchInputEmpty.postValue(true)
     }
 
     fun onSearch() = getSearchPhotos(searchInput.value.toString())
 
     private fun getAllPhotos() {
-        viewModelScope.launch(Dispatchers.IO) {
-            when (val result = photoRepository.getAllPhotos(INITIAL_VALUE, STANDARD_QUANTITY)) {
+        viewModelScope.launch(Dispatchers.Main) {
+            when (val result = photoRepository.getAllPhotos(STANDARD_QUANTITY)) {
                 is Resource.NetworkError -> _showLoadErrorNetwork.call()
                 is Resource.Error -> _showLoadError.call()
                 is Resource.Success -> setPhotos(result.data)
@@ -71,21 +77,12 @@ class PhotoGalleryViewModel @Inject constructor(
     }
 
     private fun getSearchPhotos(searchInput: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Main) {
             when (val result = photoRepository.getSearchPhotos(searchInput, STANDARD_QUANTITY)) {
                 is Resource.NetworkError -> _showLoadErrorNetwork.call()
                 is Resource.Error -> _showLoadError.call()
                 is Resource.Success -> setPhotos(result.data)
             }
         }
-    }
-
-    companion object {
-        private const val STANDARD_QUANTITY = 20
-        private const val INITIAL_VALUE = 1
-    }
-
-    init {
-        getAllPhotos()
     }
 }

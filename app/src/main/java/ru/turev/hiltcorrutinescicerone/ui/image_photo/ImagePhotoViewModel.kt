@@ -5,7 +5,7 @@ import androidx.lifecycle.MediatorLiveData
 import com.github.terrakok.cicerone.Router
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseViewModel
-import ru.turev.hiltcorrutinescicerone.util.renderscript.LiveEvent
+import ru.turev.hiltcorrutinescicerone.util.LiveEvent
 import javax.inject.Inject
 
 @HiltViewModel

@@ -10,19 +10,18 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import ru.turev.hiltcorrutinescicerone.util.extension.io
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import kotlin.coroutines.CoroutineContext
-
 
 object ImageHelper : CoroutineScope {
 
     override val coroutineContext: CoroutineContext = Dispatchers.Default
 
     fun saveToGallery(context: Context, bitmap: Bitmap, albumName: String) = launch {
-        io {
+        withContext(Dispatchers.IO) {
             try {
                 val filename = "${System.currentTimeMillis()}.png"
                 val write: (OutputStream) -> Boolean = {

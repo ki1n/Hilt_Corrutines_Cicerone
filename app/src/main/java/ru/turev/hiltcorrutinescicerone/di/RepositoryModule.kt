@@ -4,7 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ru.turev.hiltcorrutinescicerone.data.network.api.ApiService
+import ru.turev.hiltcorrutinescicerone.data.network.api.PhotosDownloadApi
 import ru.turev.hiltcorrutinescicerone.data.network.mapper.PhotoResponseMapper
 import ru.turev.hiltcorrutinescicerone.data.repository.PhotoRepositoryImpl
 import ru.turev.hiltcorrutinescicerone.domain.repository.PhotoRepository
@@ -17,7 +17,7 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideAllPhotos(
-        apiService: ApiService,
+        photosDownloadApi: PhotosDownloadApi,
         photoResponseMapper: PhotoResponseMapper
-    ): PhotoRepository = PhotoRepositoryImpl(apiService, photoResponseMapper)
+    ): PhotoRepository = PhotoRepositoryImpl(photosDownloadApi, photoResponseMapper)
 }

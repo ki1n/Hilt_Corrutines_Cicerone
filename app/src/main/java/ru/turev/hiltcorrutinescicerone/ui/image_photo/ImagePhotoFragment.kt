@@ -13,9 +13,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentImagePhotoBinding
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
@@ -26,6 +24,14 @@ import ru.turev.hiltcorrutinescicerone.view.ImagePhotoView
 
 @AndroidEntryPoint
 class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
+
+    companion object {
+        private const val ARGUMENT_PAYLOAD = "payload"
+
+        fun getInstance(itemPhoto: ItemPhoto) = ImagePhotoFragment().apply {
+            arguments = bundleOf(ARGUMENT_PAYLOAD to itemPhoto)
+        }
+    }
 
     private val viewModel: ImagePhotoViewModel by viewModels()
 
@@ -61,25 +67,18 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     private fun onSubscribedDrawOnClear(isDraw: Boolean) {
         with(binding) {
             imagePhotoView.setIsDrawMode(isDraw)
-            if (isDraw) {
-                appBarImagePhoto.imgDraw.isVisible = false
-                appBarImagePhoto.imgExitDraw.isVisible = true
-                appBarImagePhoto.imgClear.isVisible = true
-            } else {
-                appBarImagePhoto.imgDraw.isVisible = true
-                appBarImagePhoto.imgExitDraw.isVisible = false
-                appBarImagePhoto.imgClear.isVisible = false
-            }
+            appBarImagePhoto.imgDraw.isVisible = !isDraw
+            appBarImagePhoto.imgExitDraw.isVisible = isDraw
+            appBarImagePhoto.imgClear.isVisible = isDraw
         }
     }
 
     private fun initData() {
         lifecycleScope.launch {
             whenStarted {
-                binding.imagePhotoView.let { imagePhotoView ->
-                    //  val placeholder = getPlaceholder()
+                binding.imagePhotoView.let {
                     getBitmap()
-                    getImagePhotoFull(imagePhotoView)
+                    getImagePhotoFull(it)
                 }
             }
         }
@@ -94,17 +93,11 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
         Glide.with(requireContext())
             .asBitmap()
             .load(itemPhoto.full)
-            // .transition(DrawableTransitionOptions.withCrossFade())
-            // .placeholder(placeholder)
             .into(imagePhotoView)
     }
 
-    private suspend fun getPlaceholder() = withContext(Dispatchers.IO) {
-        return@withContext Glide.with(requireContext()).asDrawable().load(itemPhoto.small).submit().get()
-    }
-
-    private suspend fun getBitmap() = withContext(Dispatchers.IO) {
-        Glide.with(binding.imagePhotoView.context).asBitmap().load(itemPhoto.full)
+    private fun getBitmap() {
+        Glide.with(requireContext()).asBitmap().load(itemPhoto.full)
             .into(object : CustomTarget<Bitmap>() {
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                     binding.imagePhotoView.setIsLoadedImage(true, resource)
@@ -112,13 +105,5 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
 
                 override fun onLoadCleared(placeholder: Drawable?) {}
             })
-    }
-
-    companion object {
-        private const val ARGUMENT_PAYLOAD = "payload"
-
-        fun getInstance(itemPhoto: ItemPhoto) = ImagePhotoFragment().apply {
-            arguments = bundleOf(ARGUMENT_PAYLOAD to itemPhoto)
-        }
     }
 }

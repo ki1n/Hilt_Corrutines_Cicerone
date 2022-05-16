@@ -16,7 +16,6 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.appcompat.widget.AppCompatImageView
 import ru.turev.hiltcorrutinescicerone.R
-import ru.turev.hiltcorrutinescicerone.domain.enums.Mode
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
 
@@ -49,7 +48,7 @@ class ImagePhotoView @JvmOverloads constructor(
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.dp_2)
     private val points = mutableListOf<PointF>()
     private var patch = Path()
-    private var mode = Mode.NONE
+    private var mode = ModeTouchBehavior.NONE
     private var isLoaded = false
     private lateinit var bitmap: Bitmap
 
@@ -80,7 +79,7 @@ class ImagePhotoView @JvmOverloads constructor(
                     if (isPoint) {
                         val startPoint = PointF(event.x, event.y)
                         points.add(startPoint)
-                        mode = Mode.DRAG
+                        mode = ModeTouchBehavior.DRAG
                     }
                 }
                 // срабатывает при касании каждого последующего пальца к примеру второй
@@ -94,7 +93,7 @@ class ImagePhotoView @JvmOverloads constructor(
                         points.add(point)
                     }
 
-                    if (mode == Mode.DRAG && isPoint) {
+                    if (mode == ModeTouchBehavior.DRAG && isPoint) {
                         stopFocusPoint.set(event.x, event.y)
                         val latestPoint = points.lastOrNull()
                         val point = PointF(event.x, event.y)
@@ -104,7 +103,7 @@ class ImagePhotoView @JvmOverloads constructor(
                 }
                 // срабатывает при отпускании каждого пальца кроме последнего
                 MotionEvent.ACTION_POINTER_UP -> {
-                    mode = Mode.NONE
+                    mode = ModeTouchBehavior.NONE
                 }
             }
         }
@@ -150,7 +149,6 @@ class ImagePhotoView @JvmOverloads constructor(
     private fun clearPath() {
         if (isClearPatch) {
             patch.reset()
-            invalidate()
             isClearPatch = false
             points.clear()
             startFocusPoint.set(0f, 0f)
@@ -313,5 +311,11 @@ class ImagePhotoView @JvmOverloads constructor(
 
     fun setIsClearPatch(isClearPatch: Boolean) {
         this.isClearPatch = isClearPatch
+    }
+
+    enum class ModeTouchBehavior {
+        NONE,
+        DRAG,
+        ZOOM
     }
 }

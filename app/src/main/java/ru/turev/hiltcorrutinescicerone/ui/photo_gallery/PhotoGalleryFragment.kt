@@ -7,13 +7,19 @@ import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentPhotoGalleryBinding
-import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.adapter.PhotoGalleryAdapter
+import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 
 @AndroidEntryPoint
 open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) {
+
+    companion object {
+        private const val EMPTY_LINE = ""
+
+        fun getInstance() = PhotoGalleryFragment()
+    }
 
     private val viewModel: PhotoGalleryViewModel by viewModels()
 
@@ -61,11 +67,5 @@ open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) 
                 appBarPhotoGallerySearch.imgSearch.visibility = View.VISIBLE
             }
         }
-    }
-
-    companion object {
-        private const val EMPTY_LINE = ""
-
-        fun getInstance() = PhotoGalleryFragment()
     }
 }

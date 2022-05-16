@@ -11,7 +11,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ru.turev.hiltcorrutinescicerone.BuildConfig
-import ru.turev.hiltcorrutinescicerone.data.network.api.ApiService
+import ru.turev.hiltcorrutinescicerone.data.network.api.PhotosDownloadApi
 import ru.turev.hiltcorrutinescicerone.util.constants.Constants
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -22,7 +22,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideApiService(retrofit: Retrofit): ApiService = retrofit.create(ApiService::class.java)
+    fun providePhotosDownloadApi(retrofit: Retrofit): PhotosDownloadApi = retrofit.create(PhotosDownloadApi::class.java)
 
     @Provides
     @Singleton

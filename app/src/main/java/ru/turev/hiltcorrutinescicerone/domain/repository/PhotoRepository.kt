@@ -5,7 +5,7 @@ import ru.turev.hiltcorrutinescicerone.domain.errors.Resource
 
 interface PhotoRepository {
 
-    suspend fun getAllPhotos(page: Int, perPage: Int): Resource<List<ItemPhoto>>
+    suspend fun getAllPhotos(perPage: Int): Resource<List<ItemPhoto>>
 
     suspend fun getSearchPhotos(query: String, perPage: Int): Resource<List<ItemPhoto>>
 }

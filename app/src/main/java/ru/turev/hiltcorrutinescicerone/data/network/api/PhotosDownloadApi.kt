@@ -7,7 +7,7 @@ import ru.turev.hiltcorrutinescicerone.BuildConfig
 import ru.turev.hiltcorrutinescicerone.data.network.api.response.PhotoResponse
 import ru.turev.hiltcorrutinescicerone.data.network.api.response.SearchResultResponse
 
-interface ApiService {
+interface PhotosDownloadApi {
 
     @Headers("Authorization: Client-ID ${BuildConfig.API_KEY}")
     @GET("/photos")
