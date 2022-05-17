@@ -8,7 +8,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -46,8 +45,8 @@ class ImagePhotoView @JvmOverloads constructor(
     private val paintLine = Paint()
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.image_photo_drawing_line_thickness)
     private val points = mutableListOf<PointF>()
-    private var patch = Path()
-    private var modeTouchBehavior = ModeTouchBehavior.NONE
+    private var path = Path()
+    private var modeTouchBehavior = false
     private var topPoint = 0f
     private var lowPoint = 0f
     private var lowerRightPoint = 0f
@@ -75,7 +74,7 @@ class ImagePhotoView @JvmOverloads constructor(
                         if (isPoint) {
                             val startPoint = PointF(event.x, event.y)
                             points.add(startPoint)
-                            modeTouchBehavior = ModeTouchBehavior.DRAG
+                            modeTouchBehavior = true
                         }
                     }
                     // срабатывает при касании каждого последующего пальца к примеру второй
@@ -89,7 +88,7 @@ class ImagePhotoView @JvmOverloads constructor(
                             points.add(point)
                         }
 
-                        if (modeTouchBehavior == ModeTouchBehavior.DRAG && isPoint) {
+                        if (modeTouchBehavior && isPoint) {
                             stopFocusPoint.set(event.x, event.y)
                             val latestPoint = points.lastOrNull()
                             val point = PointF(event.x, event.y)
@@ -99,7 +98,7 @@ class ImagePhotoView @JvmOverloads constructor(
                     }
                     // срабатывает при отпускании каждого пальца кроме последнего
                     MotionEvent.ACTION_POINTER_UP -> {
-                        modeTouchBehavior = ModeTouchBehavior.NONE
+                        modeTouchBehavior = false
                     }
                 }
             }
@@ -138,17 +137,19 @@ class ImagePhotoView @JvmOverloads constructor(
 
     private fun drawLinePatch(canvas: Canvas) {
         canvas.save()
-        patch.moveTo(startFocusPoint.x, startFocusPoint.y)
-        patch.lineTo(stopFocusPoint.x, stopFocusPoint.y)
-        canvas.drawPath(patch, paintLine)
-        patch.close()
+        path.moveTo(startFocusPoint.x, startFocusPoint.y)
+        path.lineTo(stopFocusPoint.x, stopFocusPoint.y)
+        canvas.drawPath(path, paintLine)
         canvas.save()
     }
 
     private fun clearPath() {
-        patch.reset()
-        patch.close()
+        val zeroPoint = PointF(0f, 0f)
+        path.reset()
+        path.close()
         points.clear()
+        startFocusPoint.set(zeroPoint)
+        stopFocusPoint.set(zeroPoint)
         invalidate()
     }
 
@@ -285,10 +286,5 @@ class ImagePhotoView @JvmOverloads constructor(
 
     fun setIsClearPatch(isClearPatch: Boolean) {
         if (isClearPatch) clearPath()
-    }
-
-    enum class ModeTouchBehavior {
-        NONE,
-        DRAG
     }
 }

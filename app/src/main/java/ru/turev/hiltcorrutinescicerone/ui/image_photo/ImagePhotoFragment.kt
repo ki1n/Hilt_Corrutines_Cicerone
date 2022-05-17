@@ -14,7 +14,9 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentImagePhotoBinding
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
@@ -77,7 +79,8 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     private fun initData() {
         lifecycleScope.launch {
             whenStarted {
-                getImagePhotoFull(binding.imagePhotoView)
+                val placeholder = getPlaceholder()
+                getImagePhotoFull(binding.imagePhotoView, placeholder)
             }
         }
     }
@@ -87,7 +90,7 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
         binding.imagePhotoView.saveImage()
     }
 
-    private fun getImagePhotoFull(imagePhotoView: ImagePhotoView) {
+    private fun getImagePhotoFull(imagePhotoView: ImagePhotoView, placeholder: Drawable) {
         Glide.with(requireContext())
             .load(itemPhoto.full)
             .listener(object : RequestListener<Drawable> {
@@ -102,7 +105,10 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
                     return false
                 }
             })
-            .placeholder(R.drawable.ic_placeholder_image_photo)
+            .placeholder(placeholder)
             .into(imagePhotoView)
     }
+
+    private suspend fun getPlaceholder(): Drawable =
+        withContext(Dispatchers.IO) { Glide.with(requireContext()).asDrawable().load(itemPhoto.small).submit().get() }
 }
