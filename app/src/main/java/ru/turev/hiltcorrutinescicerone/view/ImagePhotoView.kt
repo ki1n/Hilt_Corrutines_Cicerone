@@ -43,71 +43,71 @@ class ImagePhotoView @JvmOverloads constructor(
     private val startFocusPoint = PointF() // точка первого пальца нажата
     private val stopFocusPoint = PointF()
     private var isDrawMode = false // эта переменная для включения режима рисования
-    private var isClearPatch = false // переменная для очистки того что нарисовал
     private val paintLine = Paint()
-        .createStroke(color = R.color.image_photo_view_red, width = R.dimen.dp_2)
+        .createStroke(color = R.color.image_photo_view_red, width = R.dimen.image_photo_drawing_line_thickness)
     private val points = mutableListOf<PointF>()
     private var patch = Path()
-    private var mode = ModeTouchBehavior.NONE
-    private var isLoaded = false
-    private lateinit var bitmap: Bitmap
-
-    // todo
+    private var modeTouchBehavior = ModeTouchBehavior.NONE
     private var topPoint = 0f
     private var lowPoint = 0f
     private var lowerRightPoint = 0f
+    private var isZoomImage = false
 
-    // здесь можно только собирать данные
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        scaleType = ScaleType.MATRIX
-        matrixByImage.set(imageMatrix)
-        savedMatrix.set(matrixByImage)
-        scaleGestureDetector.onTouchEvent(event)
-        if (!isScaling && scaleFactor > 1) {
-            gestureDetector.onTouchEvent(event)
-        }
-        imageMatrix = matrixByImage
+        if (isZoomImage) {
+            scaleType = ScaleType.MATRIX
+            matrixByImage.set(imageMatrix)
+            savedMatrix.set(matrixByImage)
+            scaleGestureDetector.onTouchEvent(event)
+            if (!isScaling && scaleFactor > 1) {
+                gestureDetector.onTouchEvent(event)
+            }
+            imageMatrix = matrixByImage
 
-        if (isDrawMode) {
-            when (event.action and MotionEvent.ACTION_MASK) {
-                MotionEvent.ACTION_CANCEL,
-                    // срабатывает при отпускании последнего пальца
-                MotionEvent.ACTION_UP,
-                    // срабатывает при касании первого пальца
-                MotionEvent.ACTION_DOWN -> {
-                    val isPoint = isEventToMatrix(event.x, event.y)
-                    if (isPoint) {
-                        val startPoint = PointF(event.x, event.y)
-                        points.add(startPoint)
-                        mode = ModeTouchBehavior.DRAG
+            if (isDrawMode) {
+                when (event.action and MotionEvent.ACTION_MASK) {
+                    MotionEvent.ACTION_CANCEL,
+                        // срабатывает при отпускании последнего пальца
+                    MotionEvent.ACTION_UP,
+                        // срабатывает при касании первого пальца
+                    MotionEvent.ACTION_DOWN -> {
+                        val isPoint = isEventToMatrix(event.x, event.y)
+                        if (isPoint) {
+                            val startPoint = PointF(event.x, event.y)
+                            points.add(startPoint)
+                            modeTouchBehavior = ModeTouchBehavior.DRAG
+                        }
                     }
-                }
-                // срабатывает при касании каждого последующего пальца к примеру второй
-                MotionEvent.ACTION_POINTER_DOWN,
-                    // Движение пальца пользователя по экрану
-                MotionEvent.ACTION_MOVE -> {
-                    val isPoint = isEventToMatrix(event.x, event.y)
-                    if (!isPoint) {
-                        points.clear()
-                        val point = PointF(event.x, event.y)
-                        points.add(point)
-                    }
+                    // срабатывает при касании каждого последующего пальца к примеру второй
+                    MotionEvent.ACTION_POINTER_DOWN,
+                        // Движение пальца пользователя по экрану
+                    MotionEvent.ACTION_MOVE -> {
+                        val isPoint = isEventToMatrix(event.x, event.y)
+                        if (!isPoint) {
+                            points.clear()
+                            val point = PointF(event.x, event.y)
+                            points.add(point)
+                        }
 
-                    if (mode == ModeTouchBehavior.DRAG && isPoint) {
-                        stopFocusPoint.set(event.x, event.y)
-                        val latestPoint = points.lastOrNull()
-                        val point = PointF(event.x, event.y)
-                        points.add(point)
-                        latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
+                        if (modeTouchBehavior == ModeTouchBehavior.DRAG && isPoint) {
+                            stopFocusPoint.set(event.x, event.y)
+                            val latestPoint = points.lastOrNull()
+                            val point = PointF(event.x, event.y)
+                            points.add(point)
+                            latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
+                        }
                     }
-                }
-                // срабатывает при отпускании каждого пальца кроме последнего
-                MotionEvent.ACTION_POINTER_UP -> {
-                    mode = ModeTouchBehavior.NONE
+                    // срабатывает при отпускании каждого пальца кроме последнего
+                    MotionEvent.ACTION_POINTER_UP -> {
+                        modeTouchBehavior = ModeTouchBehavior.NONE
+                    }
                 }
             }
+            invalidate()
+            return true
+        } else {
+            return false
         }
-        return true
     }
 
     private fun updateDataValuesMatrix() {
@@ -143,31 +143,13 @@ class ImagePhotoView @JvmOverloads constructor(
         canvas.drawPath(patch, paintLine)
         patch.close()
         canvas.save()
-        invalidate()
     }
 
     private fun clearPath() {
-        if (isClearPatch) {
-            patch.reset()
-            isClearPatch = false
-            points.clear()
-            startFocusPoint.set(0f, 0f)
-            stopFocusPoint.set(0f, 0f)
-        }
-    }
-
-    fun setIsLoadedImage(isLoaded: Boolean, bitmap: Bitmap) {
-        this.isLoaded = isLoaded
-        if (isLoaded) {
-            try {
-                this@ImagePhotoView.bitmap = bitmap
-                val w = bitmap.width
-                val h = bitmap.height
-                Log.d("qqq", "w : $w, h : $h")
-            } catch (e: Exception) {
-                Log.d("qqq", "bitmap e : ${e.message}")
-            }
-        }
+        patch.reset()
+        patch.close()
+        points.clear()
+        invalidate()
     }
 
     fun saveImage() {
@@ -177,21 +159,13 @@ class ImagePhotoView @JvmOverloads constructor(
         ImageHelper.saveToGallery(context, bitmap, MY_ALBUM)
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        // todo
-    }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        // todo
+    fun setAllowZoomImage(isZoomImage: Boolean) {
+        this.isZoomImage = isZoomImage
     }
 
     override fun onDraw(canvas: Canvas) {
-        clearPath()
         super.onDraw(canvas)
         drawLinePatch(canvas)
-        clearPath()
     }
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
@@ -310,12 +284,11 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     fun setIsClearPatch(isClearPatch: Boolean) {
-        this.isClearPatch = isClearPatch
+        if (isClearPatch) clearPath()
     }
 
     enum class ModeTouchBehavior {
         NONE,
-        DRAG,
-        ZOOM
+        DRAG
     }
 }

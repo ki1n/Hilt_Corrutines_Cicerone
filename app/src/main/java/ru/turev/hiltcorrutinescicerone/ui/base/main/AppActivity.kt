@@ -9,6 +9,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ru.turev.hiltcorrutinescicerone.R
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
 class AppActivity : AppCompatActivity() {
 
@@ -24,7 +25,7 @@ class AppActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app)
 
-        appViewModel.startNavigation()
+        if (supportFragmentManager.fragments.isEmpty()) appViewModel.startNavigation()
     }
 
     override fun onResumeFragments() {

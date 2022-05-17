@@ -2,6 +2,7 @@ package ru.turev.hiltcorrutinescicerone.ui.photo_gallery
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
@@ -10,14 +11,13 @@ import ru.turev.hiltcorrutinescicerone.databinding.FragmentPhotoGalleryBinding
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.adapter.PhotoGalleryAdapter
+import ru.turev.hiltcorrutinescicerone.util.constants.Constants
 import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 
 @AndroidEntryPoint
 open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) {
 
     companion object {
-        private const val EMPTY_LINE = ""
-
         fun getInstance() = PhotoGalleryFragment()
     }
 
@@ -47,7 +47,7 @@ open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) 
 
             appBarPhotoGallerySearch.imgClear.setOnClickListener {
                 viewModel.onClear()
-                appBarPhotoGallerySearch.etSearch.setText(EMPTY_LINE)
+                appBarPhotoGallerySearch.etSearch.setText(Constants.STRING_EMPTY)
             }
         }
     }
@@ -59,13 +59,8 @@ open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) 
 
     private fun onSubscribedSearchInputEmpty(isSearchInputEmpty: Boolean) {
         with(binding) {
-            if (isSearchInputEmpty) {
-                appBarPhotoGallerySearch.imgClear.visibility = View.VISIBLE
-                appBarPhotoGallerySearch.imgSearch.visibility = View.INVISIBLE
-            } else {
-                appBarPhotoGallerySearch.imgClear.visibility = View.INVISIBLE
-                appBarPhotoGallerySearch.imgSearch.visibility = View.VISIBLE
-            }
+            appBarPhotoGallerySearch.imgClear.isVisible = isSearchInputEmpty
+            appBarPhotoGallerySearch.imgSearch.isVisible = !isSearchInputEmpty
         }
     }
 }
