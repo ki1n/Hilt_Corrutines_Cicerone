@@ -18,6 +18,7 @@ import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
 import kotlin.math.floor
+import kotlin.math.sqrt
 
 
 class ImagePhotoView @JvmOverloads constructor(
@@ -130,12 +131,90 @@ class ImagePhotoView @JvmOverloads constructor(
         }
     }
 
+    private fun onScalePointsRecalculation() {
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+
+        if (scaleFactor > 1f) {
+            allPoints.forEach { point ->
+                val pointMatrixInvert = getTransformPointInMatrix(point)
+                val absolutPointWidthHeight = getAbsolutePositionWidthheight(point)
+                val absolutPointMeasuredWidth = getAbsolutePositionMeasuredWidth(point)
+
+                val pointx = point.x
+                val pointy = point.y
+
+                val newX3 = point.x - changeCoordinatesScaleFactorX
+                val newY3 = point.y - changeCoordinatesScaleFactorY
+
+                allPointsRecalculation.add(pointMatrixInvert)
+            }
+        }
+    }
+
+    private fun midPoint(point: PointF, event: MotionEvent) {
+        val x = event.getX(0) + event.getX(1)
+        val y = event.getY(0) + event.getY(1)
+        point[x / 2] = y / 2
+    }
+
+    private fun spacing(event: MotionEvent): Float {
+        val x = event.getX(0) - event.getX(1)
+        val y = event.getY(0) - event.getY(1)
+        return sqrt(x * x + y * y)
+    }
+
+    // todo не успел привести в порядок функцию когда в ручную высчитывается мидл точка между пальцами. В других вариантах матрица, фокус сама высчитывае видимо
+//    fun getAbsolutePosition(Ax: Float, Ay: Float): FloatArray? {
+//        val fromAxToBxInCanvasSpace: Float = (mCenterScaleX - Ax) / scaleFactor
+//        val fromBxToCanvasEdge: Float = mCanvasWidth - Bx
+//        val x: Float = mCanvasWidth - fromAxToBxInCanvasSpace - fromBxToCanvasEdge
+//
+//        val fromAyToByInCanvasSpace: Float = (mCenterScaleY - Ay) / scaleFactor
+//        val fromByToCanvasEdge: Float = mCanvasHeight - By
+//        val y: Float = mCanvasHeight - fromAyToByInCanvasSpace - fromByToCanvasEdge
+//
+//        return floatArrayOf(x, y)
+//    }
+//
+//
+//    fun getAbsolutePosition(Ax: Float, Ay: Float): FloatArray? {
+//        val x: Float = getAbsolutePosition(mBx, Ax)
+//        val y: Float = getAbsolutePosition(mBy, Ay)
+//        return floatArrayOf(x, y)
+//    }
+
+    // todo получение абсолютных координат через матрицу
     private fun getTransformPointInMatrix(pointF: PointF): PointF {
         val invertMatrix = Matrix()
         imageMatrix.invert(invertMatrix)
         val values = floatArrayOf(pointF.x, pointF.y)
         invertMatrix.mapPoints(values)
         return PointF(floor(values[0]), floor(values[1]))
+    }
+
+    // todo получение абсолютных координат относительно размеров всего экрана
+    private fun getAbsolutePositionMeasuredWidth(pointF: PointF): PointF {
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+
+        val x: Float =
+            this.measuredWidth - (values[Matrix.MTRANS_X] - pointF.x) / values[Matrix.MSCALE_X] - (this.measuredWidth - translationX)
+        val y: Float =
+            this.measuredHeight - (values[Matrix.MTRANS_Y] - pointF.y) / values[Matrix.MSCALE_X] - (this.measuredHeight - translationY)
+        return PointF(x, y)
+    }
+
+    // todo получение абсолютных координат относительно размеров самой вью
+    private fun getAbsolutePositionWidthheight(pointF: PointF): PointF {
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+
+        val x: Float =
+            this.width - (values[Matrix.MTRANS_X] - pointF.x) / values[Matrix.MSCALE_X] - (this.width - translationX)
+        val y: Float =
+            this.height - (values[Matrix.MTRANS_Y] - pointF.y) / values[Matrix.MSCALE_X] - (this.height - translationY)
+        return PointF(x, y)
     }
 
     private fun updateDataValuesMatrix() {
@@ -165,8 +244,7 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun drawLinePatch(canvas: Canvas) {
-        val values = FloatArray(9)
-        matrixByImage.getValues(values)
+        onScalePointsRecalculation()
 
         // todo учитывать перенос
         if (scaleFactor == 1f) {
@@ -178,7 +256,7 @@ class ImagePhotoView @JvmOverloads constructor(
             canvas.restore()
             invalidate()
         } else {
-            allPoints.forEach {
+            allPointsRecalculation.forEach {
                 canvas.drawPoint(it.x, it.y, paintLine)
                 invalidate()
             }
@@ -263,7 +341,8 @@ class ImagePhotoView @JvmOverloads constructor(
             matrixByImage.postTranslate(-dx, -dy)
             checkBorders()
             setImageInVerticalCenter()
-            //todo
+            // todo
+            //onScalePointsRecalculation()
             changeCoordinatesScaleFactorX = dx
             changeCoordinatesScaleFactorY = dy
 
