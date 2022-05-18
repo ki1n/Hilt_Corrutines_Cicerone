@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <bool name="is_tablet">false</bool>
+
+    <integer name="celebrities_span_count">3</integer>
+    <integer name="home_span_count">1</integer>
+    <integer name="gallery_span_count">3</integer>
+
+    <integer name="transition_anim_duration">300</integer>
+    <integer name="transition_fade_out_anim_duration">100</integer>
+
+    <string name="home_preview_ratio">10:9</string>
+</resources>

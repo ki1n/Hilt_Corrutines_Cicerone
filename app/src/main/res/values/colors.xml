@@ -7,4 +7,11 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="grey">#C6C0C0</color>
+    <color name="black_grey">#2B2929</color>
+
+    <!-- ImagePhotoView -->
+    <color name="image_photo_view_red">#DA3731</color>
+    <!-- ImagePhotoView -->
 </resources>
