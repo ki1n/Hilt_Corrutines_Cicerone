@@ -248,17 +248,12 @@ class ImagePhotoView @JvmOverloads constructor(
 
         // todo учитывать перенос
         if (scaleFactor == 1f) {
-            canvas.save()
             path.moveTo(startFocusPoint.x, startFocusPoint.y)
             path.lineTo(stopFocusPoint.x, stopFocusPoint.y)
             canvas.drawPath(path, paintLine)
-            canvas.save()
-            canvas.restore()
-            invalidate()
         } else {
             allPointsRecalculation.forEach {
                 canvas.drawPoint(it.x, it.y, paintLine)
-                invalidate()
             }
         }
     }
