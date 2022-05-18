@@ -17,6 +17,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
+import kotlin.math.floor
 
 
 class ImagePhotoView @JvmOverloads constructor(
@@ -47,10 +48,20 @@ class ImagePhotoView @JvmOverloads constructor(
     private val points = mutableListOf<PointF>()
     private var path = Path()
     private var modeTouchBehavior = false
+    private val allPoints = mutableListOf<PointF>()
+    private val allPointsRecalculation = mutableListOf<PointF>()
+    private val allPointTransform = mutableListOf<PointF>()
+
     private var topPoint = 0f
     private var lowPoint = 0f
     private var lowerRightPoint = 0f
     private var isZoomImage = false
+
+    private var changeCoordinatesScaleFactorX = 0f
+    private var changeCoordinatesScaleFactorY = 0f
+
+    private var moveToAxisX = 0f
+    private var moveToAxisY = 0f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isZoomImage) {
@@ -74,7 +85,10 @@ class ImagePhotoView @JvmOverloads constructor(
                         if (isPoint) {
                             val startPoint = PointF(event.x, event.y)
                             points.add(startPoint)
+                            allPoints.add(startPoint)
                             modeTouchBehavior = true
+                            //todo
+                            // getOriginalCoordinateXY()
                         }
                     }
                     // срабатывает при касании каждого последующего пальца к примеру второй
@@ -86,14 +100,21 @@ class ImagePhotoView @JvmOverloads constructor(
                             points.clear()
                             val point = PointF(event.x, event.y)
                             points.add(point)
+                            allPoints.add(point)
+                            //todo
+                            //getOriginalCoordinateXY()
                         }
 
                         if (modeTouchBehavior && isPoint) {
-                            stopFocusPoint.set(event.x, event.y)
-                            val latestPoint = points.lastOrNull()
                             val point = PointF(event.x, event.y)
-                            points.add(point)
+                            stopFocusPoint.set(point)
+                            val latestPoint = points.lastOrNull()
+                            val pointStop = PointF(event.x, event.y)
+                            points.add(pointStop)
+                            allPoints.add(pointStop)
                             latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
+                            // todo
+                            // getOriginalCoordinateXY()
                         }
                     }
                     // срабатывает при отпускании каждого пальца кроме последнего
@@ -109,13 +130,21 @@ class ImagePhotoView @JvmOverloads constructor(
         }
     }
 
+    private fun getTransformPointInMatrix(pointF: PointF): PointF {
+        val invertMatrix = Matrix()
+        imageMatrix.invert(invertMatrix)
+        val values = floatArrayOf(pointF.x, pointF.y)
+        invertMatrix.mapPoints(values)
+        return PointF(floor(values[0]), floor(values[1]))
+    }
+
     private fun updateDataValuesMatrix() {
         val values = FloatArray(9)
         matrixByImage.getValues(values)
 
         if (scaleFactor == 1f) {
-            topPoint = values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]
-            lowPoint = values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X])
+            topPoint = values[Matrix.MTRANS_Y]
+            lowPoint = values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y])
             lowerRightPoint = values[Matrix.MSCALE_X] * this.width
         }
 
@@ -136,11 +165,24 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun drawLinePatch(canvas: Canvas) {
-        canvas.save()
-        path.moveTo(startFocusPoint.x, startFocusPoint.y)
-        path.lineTo(stopFocusPoint.x, stopFocusPoint.y)
-        canvas.drawPath(path, paintLine)
-        canvas.save()
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+
+        // todo учитывать перенос
+        if (scaleFactor == 1f) {
+            canvas.save()
+            path.moveTo(startFocusPoint.x, startFocusPoint.y)
+            path.lineTo(stopFocusPoint.x, stopFocusPoint.y)
+            canvas.drawPath(path, paintLine)
+            canvas.save()
+            canvas.restore()
+            invalidate()
+        } else {
+            allPoints.forEach {
+                canvas.drawPoint(it.x, it.y, paintLine)
+                invalidate()
+            }
+        }
     }
 
     private fun clearPath() {
@@ -148,6 +190,9 @@ class ImagePhotoView @JvmOverloads constructor(
         path.reset()
         path.close()
         points.clear()
+        allPoints.clear()
+        allPointTransform.clear()
+        allPointsRecalculation.clear()
         startFocusPoint.set(zeroPoint)
         stopFocusPoint.set(zeroPoint)
         invalidate()
@@ -174,12 +219,10 @@ class ImagePhotoView @JvmOverloads constructor(
             scaleFactor *= detector.scaleFactor
             focusPoint.set(detector.focusX, detector.focusY)
             matrixByImage.set(savedMatrix)
-            matrixByImage.postScale(
-                detector.scaleFactor,
-                detector.scaleFactor,
-                focusPoint.x,
-                focusPoint.y
-            )
+            matrixByImage.postScale(detector.scaleFactor, detector.scaleFactor, focusPoint.x, focusPoint.y)
+            //todo
+            // onScalePointsRecalculation()
+            invalidate()
             return true
         }
         return false
@@ -202,7 +245,6 @@ class ImagePhotoView @JvmOverloads constructor(
             matrixByImage.postScale(backScale, backScale, focusPoint.x, focusPoint.y)
             checkBorders()
             setImageInVerticalCenter()
-
             isScaling = false
         }
     }
@@ -221,6 +263,10 @@ class ImagePhotoView @JvmOverloads constructor(
             matrixByImage.postTranslate(-dx, -dy)
             checkBorders()
             setImageInVerticalCenter()
+            //todo
+            changeCoordinatesScaleFactorX = dx
+            changeCoordinatesScaleFactorY = dy
+
             return true
         }
         return false
