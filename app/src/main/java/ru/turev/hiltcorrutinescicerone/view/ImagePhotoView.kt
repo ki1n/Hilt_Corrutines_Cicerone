@@ -17,7 +17,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
-import kotlin.math.floor
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 
@@ -46,6 +46,8 @@ class ImagePhotoView @JvmOverloads constructor(
     private var isDrawMode = false // эта переменная для включения режима рисования
     private val paintLine = Paint()
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.image_photo_drawing_line_thickness)
+    private val paintLineTest = Paint()
+        .createStroke(color = R.color.purple_700, width = R.dimen.image_photo_drawing_line_thickness)
     private val points = mutableListOf<PointF>()
     private var path = Path()
     private var modeTouchBehavior = false
@@ -58,11 +60,16 @@ class ImagePhotoView @JvmOverloads constructor(
     private var lowerRightPoint = 0f
     private var isZoomImage = false
 
-    private var changeCoordinatesScaleFactorX = 0f
-    private var changeCoordinatesScaleFactorY = 0f
+    private var differenceMixingMatrixX = 0f
+    private var differenceMixingMatrixY = 0f
 
-    private var moveToAxisX = 0f
-    private var moveToAxisY = 0f
+    // todo
+    private var originalImageMatrixW = 0f
+    private var originalImageMatrixH = 0f
+
+    private var lastMTRANSX = 0f
+    private var lastMTRANSY = 0f
+    private var lastShiftCoordinates = 0f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isZoomImage) {
@@ -85,11 +92,10 @@ class ImagePhotoView @JvmOverloads constructor(
                         val isPoint = isEventToMatrix(event.x, event.y)
                         if (isPoint) {
                             val startPoint = PointF(event.x, event.y)
+                            //  val startOriginal = onPointEventToPointImage(event)
                             points.add(startPoint)
                             allPoints.add(startPoint)
                             modeTouchBehavior = true
-                            //todo
-                            // getOriginalCoordinateXY()
                         }
                     }
                     // срабатывает при касании каждого последующего пальца к примеру второй
@@ -100,22 +106,21 @@ class ImagePhotoView @JvmOverloads constructor(
                         if (!isPoint) {
                             points.clear()
                             val point = PointF(event.x, event.y)
+                            // val startOriginal = onPointEventToPointImage(event)
                             points.add(point)
                             allPoints.add(point)
-                            //todo
-                            //getOriginalCoordinateXY()
                         }
 
                         if (modeTouchBehavior && isPoint) {
                             val point = PointF(event.x, event.y)
+                            // val startOriginal1 = onPointEventToPointImage(event)
                             stopFocusPoint.set(point)
                             val latestPoint = points.lastOrNull()
                             val pointStop = PointF(event.x, event.y)
+                            // val startOriginal = onPointEventToPointImage(event)
                             points.add(pointStop)
                             allPoints.add(pointStop)
                             latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
-                            // todo
-                            // getOriginalCoordinateXY()
                         }
                     }
                     // срабатывает при отпускании каждого пальца кроме последнего
@@ -129,92 +134,6 @@ class ImagePhotoView @JvmOverloads constructor(
         } else {
             return false
         }
-    }
-
-    private fun onScalePointsRecalculation() {
-        val values = FloatArray(9)
-        matrixByImage.getValues(values)
-
-        if (scaleFactor > 1f) {
-            allPoints.forEach { point ->
-                val pointMatrixInvert = getTransformPointInMatrix(point)
-                val absolutPointWidthHeight = getAbsolutePositionWidthheight(point)
-                val absolutPointMeasuredWidth = getAbsolutePositionMeasuredWidth(point)
-
-                val pointx = point.x
-                val pointy = point.y
-
-                val newX3 = point.x - changeCoordinatesScaleFactorX
-                val newY3 = point.y - changeCoordinatesScaleFactorY
-
-                allPointsRecalculation.add(pointMatrixInvert)
-            }
-        }
-    }
-
-    private fun midPoint(point: PointF, event: MotionEvent) {
-        val x = event.getX(0) + event.getX(1)
-        val y = event.getY(0) + event.getY(1)
-        point[x / 2] = y / 2
-    }
-
-    private fun spacing(event: MotionEvent): Float {
-        val x = event.getX(0) - event.getX(1)
-        val y = event.getY(0) - event.getY(1)
-        return sqrt(x * x + y * y)
-    }
-
-    // todo не успел привести в порядок функцию когда в ручную высчитывается мидл точка между пальцами. В других вариантах матрица, фокус сама высчитывае видимо
-//    fun getAbsolutePosition(Ax: Float, Ay: Float): FloatArray? {
-//        val fromAxToBxInCanvasSpace: Float = (mCenterScaleX - Ax) / scaleFactor
-//        val fromBxToCanvasEdge: Float = mCanvasWidth - Bx
-//        val x: Float = mCanvasWidth - fromAxToBxInCanvasSpace - fromBxToCanvasEdge
-//
-//        val fromAyToByInCanvasSpace: Float = (mCenterScaleY - Ay) / scaleFactor
-//        val fromByToCanvasEdge: Float = mCanvasHeight - By
-//        val y: Float = mCanvasHeight - fromAyToByInCanvasSpace - fromByToCanvasEdge
-//
-//        return floatArrayOf(x, y)
-//    }
-//
-//
-//    fun getAbsolutePosition(Ax: Float, Ay: Float): FloatArray? {
-//        val x: Float = getAbsolutePosition(mBx, Ax)
-//        val y: Float = getAbsolutePosition(mBy, Ay)
-//        return floatArrayOf(x, y)
-//    }
-
-    // todo получение абсолютных координат через матрицу
-    private fun getTransformPointInMatrix(pointF: PointF): PointF {
-        val invertMatrix = Matrix()
-        imageMatrix.invert(invertMatrix)
-        val values = floatArrayOf(pointF.x, pointF.y)
-        invertMatrix.mapPoints(values)
-        return PointF(floor(values[0]), floor(values[1]))
-    }
-
-    // todo получение абсолютных координат относительно размеров всего экрана
-    private fun getAbsolutePositionMeasuredWidth(pointF: PointF): PointF {
-        val values = FloatArray(9)
-        matrixByImage.getValues(values)
-
-        val x: Float =
-            this.measuredWidth - (values[Matrix.MTRANS_X] - pointF.x) / values[Matrix.MSCALE_X] - (this.measuredWidth - translationX)
-        val y: Float =
-            this.measuredHeight - (values[Matrix.MTRANS_Y] - pointF.y) / values[Matrix.MSCALE_X] - (this.measuredHeight - translationY)
-        return PointF(x, y)
-    }
-
-    // todo получение абсолютных координат относительно размеров самой вью
-    private fun getAbsolutePositionWidthheight(pointF: PointF): PointF {
-        val values = FloatArray(9)
-        matrixByImage.getValues(values)
-
-        val x: Float =
-            this.width - (values[Matrix.MTRANS_X] - pointF.x) / values[Matrix.MSCALE_X] - (this.width - translationX)
-        val y: Float =
-            this.height - (values[Matrix.MTRANS_Y] - pointF.y) / values[Matrix.MSCALE_X] - (this.height - translationY)
-        return PointF(x, y)
     }
 
     private fun updateDataValuesMatrix() {
@@ -244,19 +163,65 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun drawLinePatch(canvas: Canvas) {
-        onScalePointsRecalculation()
+        // onScalePointsRecalculation()
 
         // todo учитывать перенос
         if (scaleFactor == 1f) {
+            canvas.save()
             path.moveTo(startFocusPoint.x, startFocusPoint.y)
             path.lineTo(stopFocusPoint.x, stopFocusPoint.y)
+            // canvas.drawLine(startFocusPoint.x, startFocusPoint.y, stopFocusPoint.x, stopFocusPoint.y, pain)
             canvas.drawPath(path, paintLine)
-        } else {
+            canvas.save()
+        }
+        if (scaleFactor > 1f) {
+//            canvas.save()
+//            path.moveTo(startFocusPoint.x, startFocusPoint.y)
+//            path.lineTo(stopFocusPoint.x, stopFocusPoint.y)
+//            canvas.drawPath(path, paintLineTest)
+//            canvas.save()
+
             allPointsRecalculation.forEach {
-                canvas.drawPoint(it.x, it.y, paintLine)
+              //  canvas.drawPoint(it.x - lastMTRANSX, it.y - lastMTRANSY, paintLineTest)
+                 canvas.drawPoint(it.x, it.y, paintLineTest)
             }
         }
     }
+
+    // todo функция для преобразования точки с экрана, в точку на изображении
+//    private fun onPointEventToPointImage(event: MotionEvent): PointF {
+//        val pointEvent = PointF(event.x, event.y)
+//
+////        val w = drawable.intrinsicWidth
+////        val h = drawable.intrinsicHeight
+////
+////        val mw = measuredWidth
+////        val mh = measuredHeight
+////
+////        val orw = originalImageMatrixW
+////        val orh = originalImageMatrixH
+////
+////        val imageX = pointEvent.x * scaleFactor - lastMTRANSX
+////        val imageY = pointEvent.y * scaleFactor
+////        return PointF(imageX, imageY)
+//
+//
+//        if (scaleFactor == 1f) {
+//            val imageX = pointEvent.x
+//            val imageY = pointEvent.y
+//            return PointF(imageX, imageY)
+//        }
+//
+//        if (scaleFactor > 1f) {
+////            val imageX = pointEvent.x - lastMTRANSX
+////            val imageY = pointEvent.y - lastMTRANSY
+//            val imageX = pointEvent.x
+//            val imageY = pointEvent.y
+//            return PointF(imageX, imageY)
+//        }
+//
+//        return PointF(0f, 0f)
+//    }
 
     private fun clearPath() {
         val zeroPoint = PointF(0f, 0f)
@@ -271,17 +236,6 @@ class ImagePhotoView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun saveImage() {
-        val bitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        this.draw(canvas)
-        ImageHelper.saveToGallery(context, bitmap, MY_ALBUM)
-    }
-
-    fun setAllowZoomImage(isZoomImage: Boolean) {
-        this.isZoomImage = isZoomImage
-    }
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         drawLinePatch(canvas)
@@ -293,9 +247,10 @@ class ImagePhotoView @JvmOverloads constructor(
             focusPoint.set(detector.focusX, detector.focusY)
             matrixByImage.set(savedMatrix)
             matrixByImage.postScale(detector.scaleFactor, detector.scaleFactor, focusPoint.x, focusPoint.y)
-            //todo
-            // onScalePointsRecalculation()
-            invalidate()
+            // getLastPointMatrixOffset()
+            getDifferenceMixingMatrix()
+            // todo
+            getShiftCoordinates()
             return true
         }
         return false
@@ -318,6 +273,7 @@ class ImagePhotoView @JvmOverloads constructor(
             matrixByImage.postScale(backScale, backScale, focusPoint.x, focusPoint.y)
             checkBorders()
             setImageInVerticalCenter()
+            getLastPointMatrixOffset()
             isScaling = false
         }
     }
@@ -336,14 +292,55 @@ class ImagePhotoView @JvmOverloads constructor(
             matrixByImage.postTranslate(-dx, -dy)
             checkBorders()
             setImageInVerticalCenter()
-            // todo
-            //onScalePointsRecalculation()
-            changeCoordinatesScaleFactorX = dx
-            changeCoordinatesScaleFactorY = dy
-
+            getLastPointMatrixOffset()
             return true
         }
         return false
+    }
+
+    // todo вычислить гипотенузу
+    private fun getShiftCoordinates() {
+        val dc =
+            sqrt(abs(differenceMixingMatrixX * differenceMixingMatrixX) + abs(differenceMixingMatrixY * differenceMixingMatrixY)) // смешение матрица
+
+        allPoints.forEach { point ->
+            val x = point.x
+            val y = point.y
+
+            val fpx = focusPoint.x
+            val fpy = focusPoint.y
+
+            // треугольник от фокус поинт до нашей точки
+            val fx = abs(abs(focusPoint.x) - abs(point.x))
+            val fy = abs(abs(focusPoint.y) - abs(point.y))
+            val fc = sqrt((fx * fx) + (fy * fy)) // растояние от фокус точки до нашей точки
+
+            val sinY = (fy / fc) //общий угол смещения и для расширенного треугольника
+            // вычисление расширенного треугольника
+            val resultC = abs(dc + fc)
+            val resultY = sinY * resultC
+            val resultX = sqrt(abs(resultC * resultC) - abs(resultY * resultY))
+
+            allPointsRecalculation.add(PointF(point.x + differenceMixingMatrixX, point.y + differenceMixingMatrixY))
+//            allPointsRecalculation.add(
+//                PointF(
+//                    point.x - differenceMixingMatrixX * scaleFactor,
+//                    point.y - differenceMixingMatrixY * scaleFactor
+//                )
+//            )
+            //  allPointsRecalculation.add(PointF(focusPoint.x - resultX, focusPoint.y - resultY))
+            // allPointsRecalculation.add(PointF(point.x - resultX, point.y - resultY))
+            //  allPointsRecalculation.add(PointF(point.x - lastMTRANSX, point.y - lastMTRANSY))
+//            if (lastMTRANSX > 0) {
+//                allPointsRecalculation.add(PointF(focusPoint.x + resultX, focusPoint.y + resultY))
+//            }
+
+//            if (focusPoint.x - point.x < 0) {
+//                allPointsRecalculation.add(PointF(focusPoint.x + resultX, focusPoint.y + resultY))
+//            } else {
+//                allPointsRecalculation.add(PointF(focusPoint.x - resultX, focusPoint.y - resultY))
+//            }
+        }
     }
 
     override fun onLongPress(p0: MotionEvent?) {
@@ -355,11 +352,15 @@ class ImagePhotoView @JvmOverloads constructor(
     private fun setImageInVerticalCenter() {
         val values = FloatArray(9)
         matrixByImage.getValues(values)
+
         val dy = when {
             getContentHeight() * scaleFactor < measuredHeight ->
                 0.5F * measuredHeight - values[Matrix.MTRANS_Y] - 0.5F * getContentHeight() * scaleFactor
             else -> 0F
         }
+
+        originalImageMatrixH = getContentHeight() * 1f
+        originalImageMatrixW = measuredWidth * 1f
         matrixByImage.postTranslate(0F, dy)
     }
 
@@ -392,6 +393,32 @@ class ImagePhotoView @JvmOverloads constructor(
         matrixByImage.postTranslate(dx, dy)
     }
 
+    private fun getLastPointMatrixOffset() {
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+
+        lastMTRANSX = abs(values[Matrix.MTRANS_X])
+        lastMTRANSY = abs(values[Matrix.MTRANS_Y])
+    }
+
+    private fun getDifferenceMixingMatrix() {
+        val values = FloatArray(9)
+        matrixByImage.getValues(values)
+
+        differenceMixingMatrixX = abs(lastMTRANSX - abs(values[Matrix.MTRANS_X]))
+        differenceMixingMatrixY = abs(lastMTRANSY - abs(values[Matrix.MTRANS_Y]))
+
+        lastMTRANSX = abs(values[Matrix.MTRANS_X])
+        lastMTRANSY = abs(values[Matrix.MTRANS_Y])
+    }
+
+    fun saveImage() {
+        val bitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        this.draw(canvas)
+        ImageHelper.saveToGallery(context, bitmap, MY_ALBUM)
+    }
+
     private fun Paint.createStroke(@ColorRes color: Int, @DimenRes width: Int) = this.apply {
         isAntiAlias = true
         this.color = context.getCompatColor(color)
@@ -406,5 +433,11 @@ class ImagePhotoView @JvmOverloads constructor(
 
     fun setIsClearPatch(isClearPatch: Boolean) {
         if (isClearPatch) clearPath()
+    }
+
+    fun setAllowZoomImage(isZoomImage: Boolean) {
+        this.isZoomImage = isZoomImage
+        setImageInVerticalCenter()
+        getLastPointMatrixOffset()
     }
 }
