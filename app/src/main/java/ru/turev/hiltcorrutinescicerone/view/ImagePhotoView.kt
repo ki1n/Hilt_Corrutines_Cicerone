@@ -15,7 +15,6 @@ import android.view.ScaleGestureDetector
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.appcompat.widget.AppCompatImageView
-added recalculation on scrollimport androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.withMatrix
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
@@ -40,8 +39,9 @@ class ImagePhotoView @JvmOverloads constructor(
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
     private val gestureDetector = GestureDetector(context, this)
     private var scaleFactor = 1f
+    private var deltaScaleFactor = 1f
     private var matrixByImage = Matrix()
-    private var savedMatrix = Matrix()
+    private var savedByImageMatrix = Matrix()
     private var isScaling = false
     private val focusPoint = PointF()
     private val startFocusPoint = PointF() // точка первого пальца нажата
@@ -53,13 +53,13 @@ class ImagePhotoView @JvmOverloads constructor(
     private val points = mutableListOf<PointF>()
     private var path = Path()
 
-    // todo
-    var allPoints = HashMap<MyPath, Paint>()
+    private var allPoints = HashMap<MyPath, Paint>()
     private var mLastPaths = HashMap<MyPath, Paint>()
     private var mUndonePaths = HashMap<MyPath, Paint>()
 
     private var mPath = MyPath()
-    private var mTransform = Matrix()
+    private var matrixByPoints = Matrix()
+    private var saveByPointsMatrix = Matrix()
 
     private var mBackground: Bitmap? = null
     private var mBackgroundRect = RectF()
@@ -73,6 +73,8 @@ class ImagePhotoView @JvmOverloads constructor(
     private var mStartY = 0f
     private var mCurX = 0f
     private var mCurY = 0f
+    private var isScale = false
+    private var isScroll = false
 
     private var modeTouchBehavior = false
     private var topPoint = 0f
@@ -113,47 +115,52 @@ class ImagePhotoView @JvmOverloads constructor(
             && event.action != MotionEvent.ACTION_MOVE
         )
             return false
-       // if (event.action == MotionEvent.ACTION_MOVE) {
-            val shouldScroll = event.pointerCount < 1
-            val center = getPointerCenter(event)
-            if (shouldScroll != mIsScrolling) {
-                mUndonePaths.clear()
-                mPath.reset()
-                if (shouldScroll) {
-                    mIsScrolling = true
-                    mScrollOriginX = center.x
-                    mScrollOriginY = center.y
-                } else if (event.action == MotionEvent.ACTION_UP)
-                    mIsScrolling = false
-                return true
-            }
+        // if (event.action == MotionEvent.ACTION_MOVE) {
+        val shouldScroll = event.pointerCount < 1
+        val center = getPointerCenter(event)
+        if (shouldScroll != mIsScrolling) {
+            mUndonePaths.clear()
+            mPath.reset()
             if (shouldScroll) {
-                mScrollX += (center.x - mScrollOriginX) / scaleFactor
-                mScrollY += (center.y - mScrollOriginY) / scaleFactor
+                mIsScrolling = true
                 mScrollOriginX = center.x
                 mScrollOriginY = center.y
-                invalidate()
-            }
-            return mIsScrolling
+            } else if (event.action == MotionEvent.ACTION_UP)
+                mIsScrolling = false
+            return true
+        }
+        if (shouldScroll) {
+            mScrollX += (center.x - mScrollOriginX) / scaleFactor
+            mScrollY += (center.y - mScrollOriginY) / scaleFactor
+            mScrollOriginX = center.x
+            mScrollOriginY = center.y
+            invalidate()
+        }
+        return mIsScrolling
         //}
-       // return mIsScrolling
+        // return mIsScrolling
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isZoomImage) {
             scaleType = ScaleType.MATRIX
             matrixByImage.set(imageMatrix)
-            savedMatrix.set(matrixByImage)
+            savedByImageMatrix.set(matrixByImage)
+
+            // todo
+            // matrixByPoints.set(imageMatrix)
+            // saveByPointsMatrix.set(matrixByPoints)
+
             scaleGestureDetector.onTouchEvent(event)
-            if (!isScaling && scaleFactor > 1) {
-                gestureDetector.onTouchEvent(event)
-                // todo
-               // if (handleScroll(event)) return true
-            }
+            if (!isScaling && scaleFactor > 1) gestureDetector.onTouchEvent(event)
+
             imageMatrix = matrixByImage
+            //todo
+            //imageMatrix = matrixByPoints
 
             val points2: FloatArray = floatArrayOf(event.x, event.y)
-            mTransform.mapPoints(points2)
+            matrixByPoints.mapPoints(points2)
+            saveByPointsMatrix.set(matrixByPoints)
             val x = points2[0]
             val y = points2[1]
 
@@ -167,7 +174,7 @@ class ImagePhotoView @JvmOverloads constructor(
                             mStartY = y
                             actionDown(x, y)
                             modeTouchBehavior = true
-                            //  mUndonePaths.clear()
+                            // mUndonePaths.clear()
                         }
                     }
                     // Движение пальца пользователя по экрану
@@ -177,46 +184,6 @@ class ImagePhotoView @JvmOverloads constructor(
                     MotionEvent.ACTION_UP -> if (isEventToMatrix(event.x, event.y)) actionUp()
                 }
             }
-
-//            if (isDrawMode) {
-//                when (event.action and MotionEvent.ACTION_MASK) {
-//                    MotionEvent.ACTION_CANCEL,
-//                        // срабатывает при отпускании последнего пальца
-//                    MotionEvent.ACTION_UP,
-//                        // срабатывает при касании первого пальца
-//                    MotionEvent.ACTION_DOWN -> {
-//                        val isPoint = isEventToMatrix(event.x, event.y)
-//                        if (isPoint) {
-//                            val startPoint = PointF(event.x, event.y)
-//                            points.add(startPoint)
-//                            modeTouchBehavior = true
-//                        }
-//                    }
-//                    // срабатывает при касании каждого последующего пальца к примеру второй
-//                    MotionEvent.ACTION_POINTER_DOWN,
-//                        // Движение пальца пользователя по экрану
-//                    MotionEvent.ACTION_MOVE -> {
-//                        val isPoint = isEventToMatrix(event.x, event.y)
-//                        if (!isPoint) {
-//                            points.clear()
-//                            val point = PointF(event.x, event.y)
-//                            points.add(point)
-//                        }
-//
-//                        if (modeTouchBehavior && isPoint) {
-//                            stopFocusPoint.set(event.x, event.y)
-//                            val latestPoint = points.lastOrNull()
-//                            val point = PointF(event.x, event.y)
-//                            points.add(point)
-//                            latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
-//                        }
-//                    }
-//                    // срабатывает при отпускании каждого пальца кроме последнего
-//                    MotionEvent.ACTION_POINTER_UP -> {
-//                        modeTouchBehavior = false
-//                    }
-//                }
-//            }
             invalidate()
             return true
         } else {
@@ -278,24 +245,12 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun drawLinePatch(canvas: Canvas) {
-        mTransform.setTranslate(mScrollX + canvas.clipBounds.centerX(), mScrollY + canvas.clipBounds.centerY())
-        mTransform.postScale(scaleFactor, scaleFactor)
+        // todo
+        // mTransform.setTranslate(mScrollX, mScrollY)
+        // mTransform.setTranslate(mScrollX + canvas.clipBounds.centerX(), mScrollY + canvas.clipBounds.centerY())
 
-        val bg = mBackground
-        if (bg != null) {
-            mBackgroundRect.left = -bg.width.toFloat() / 2
-            mBackgroundRect.right = bg.width.toFloat() / 2
-            mBackgroundRect.top = -bg.height.toFloat() / 2
-            mBackgroundRect.bottom = bg.height.toFloat() / 2
-            if (bg.height == 1 && bg.width == 1)
-                mBackgroundRect.set(canvas.clipBounds)
-            else
-                mTransform.mapRect(mBackgroundRect)
-
-            canvas.drawBitmap(drawable.toBitmap(), null, mBackgroundRect, null)
-        }
-        canvas.withMatrix(mTransform) {
-            mTransform.invert(mTransform)
+        canvas.withMatrix(matrixByPoints) {
+            // matrixByPoints.invert(matrixByPoints)
 
             for ((key, value) in allPoints) {
                 canvas.drawPath(key, paintLine)
@@ -330,18 +285,31 @@ class ImagePhotoView @JvmOverloads constructor(
         if (!isDrawMode) {
             val oldScale = scaleFactor
             scaleFactor *= detector.scaleFactor
+            // todo
+            deltaScaleFactor = detector.scaleFactor
+
             mScrollX += detector.focusX * (oldScale - scaleFactor) / scaleFactor
             mScrollY += detector.focusY * (oldScale - scaleFactor) / scaleFactor
 
-            focusPoint.set(detector.focusX, detector.focusY)
-            matrixByImage.set(savedMatrix)
+            focusPoint.set(measuredWidth / 2 * 1f, measuredHeight / 2 * 1f)
+            matrixByImage.set(savedByImageMatrix)
+
             matrixByImage.postScale(
                 detector.scaleFactor,
                 detector.scaleFactor,
                 focusPoint.x,
                 focusPoint.y
             )
+
+            // todo
+            matrixByPoints.set(saveByPointsMatrix)
+            matrixByPoints.setScale(scaleFactor, scaleFactor, focusPoint.x, focusPoint.y)
+
             getLastPointMatrixOffset()
+
+            // todo
+            isScale = true
+            isScroll = false
             invalidate()
             return true
         }
@@ -361,8 +329,14 @@ class ImagePhotoView @JvmOverloads constructor(
                 else -> 1F
             }
             scaleFactor = scaleFactor.coerceIn(MIN_SCALE, MAX_SCALE)
-            matrixByImage.set(savedMatrix)
-            matrixByImage.postScale(backScale, backScale, focusPoint.x, focusPoint.y)
+            matrixByImage.set(savedByImageMatrix)
+            // todo
+            matrixByPoints.set(saveByPointsMatrix)
+
+            matrixByImage.postScale(backScale, backScale, measuredWidth / 2 * 1f, measuredHeight / 2 * 1f)
+            // todo
+            //  matrixByPoints.postScale(backScale, backScale, measuredWidth / 2 * 1f, measuredHeight / 2 * 1f)
+
             checkBorders()
             setImageInVerticalCenter()
             getLastPointMatrixOffset()
@@ -381,16 +355,26 @@ class ImagePhotoView @JvmOverloads constructor(
 
     override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, dx: Float, dy: Float): Boolean {
         if (!isDrawMode) {
-            matrixByImage.set(savedMatrix)
+            matrixByImage.set(savedByImageMatrix)
             matrixByImage.postTranslate(-dx, -dy)
-            // mTransform.postTranslate(-dx,-dy)
+            // todo
+            matrixByPoints.set(saveByPointsMatrix)
+            matrixByPoints.setTranslate(-dx, -dy)
+
+            // matrixByPoints.setTranslate(-dx, -dy)
             checkBorders()
             setImageInVerticalCenter()
             getLastPointMatrixOffset()
 
+            // todo
             mScrollX += -dx / 2
             mScrollY += -dy / 2
 
+            isScale = false
+            isScroll = true
+
+            // todo
+            invalidate()
             return true
         }
         return false
