@@ -1,5 +1,6 @@
 package ru.turev.hiltcorrutinescicerone.ui.image_photo
 
+import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
@@ -79,8 +80,12 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     private fun initData() {
         lifecycleScope.launch {
             whenStarted {
-                val placeholder = getPlaceholder()
-                getImagePhotoFull(binding.imagePhotoView, placeholder)
+                with(binding) {
+                    val placeholder = getPlaceholder()
+                    val bitmapFull = getBitmapFull()
+                    imagePhotoView.setBitmapFull(true, bitmapFull)
+                    getImagePhotoFull(imagePhotoView, placeholder)
+                }
             }
         }
     }
@@ -111,4 +116,8 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
 
     private suspend fun getPlaceholder(): Drawable =
         withContext(Dispatchers.IO) { Glide.with(requireContext()).asDrawable().load(itemPhoto.small).submit().get() }
+
+    private suspend fun getBitmapFull(): Bitmap = withContext(Dispatchers.IO) {
+        Glide.with(binding.imagePhotoView.context).asBitmap().load(itemPhoto.full).submit().get()
+    }
 }
