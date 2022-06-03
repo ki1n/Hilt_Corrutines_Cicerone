@@ -11,6 +11,7 @@ import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.appcompat.widget.AppCompatImageView
@@ -30,7 +31,6 @@ class ImagePhotoView @JvmOverloads constructor(
     companion object {
         private const val MAX_SCALE = 5f
         private const val MIN_SCALE = 1f
-        private const val MY_ALBUM = "albumName"
     }
 
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
@@ -44,6 +44,7 @@ class ImagePhotoView @JvmOverloads constructor(
     private val paintLine = Paint()
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.image_photo_drawing_line_thickness)
 
+    private var points = HashMap<MyPath, Paint>()
     private var allPoints = HashMap<MyPath, Paint>()
     private var allPointsFullBitmap = HashMap<MyPath, Paint>()
     private var myPath = MyPath()
@@ -69,7 +70,6 @@ class ImagePhotoView @JvmOverloads constructor(
     private var isZoomImage = false
     private var coefficientX = 1f
     private var coefficientY = 1f
-
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isZoomImage) {
@@ -101,10 +101,21 @@ class ImagePhotoView @JvmOverloads constructor(
                             modeTouchBehavior = true
                         }
                     }
-                    MotionEvent.ACTION_MOVE -> if (isEventToMatrix(event.x, event.y) && modeTouchBehavior) {
-                        actionMove(x, y)
+                    MotionEvent.ACTION_MOVE -> {
+                        if (!isEventToMatrix(event.x, event.y)) {
+                            startPointX = x
+                            startPointY = y
+                            startPointFullBitmapX = x * coefficientX
+                            startPointFullBitmapY = (y * coefficientY) - topPoint * coefficientY
+                            actionDown(x, y)
+                        }
+
+                        if (isEventToMatrix(event.x, event.y) && modeTouchBehavior) {
+                            actionMove(x, y)
+                            actionUp()
+                        }
                     }
-                    MotionEvent.ACTION_UP -> if (isEventToMatrix(event.x, event.y)) actionUp()
+                    MotionEvent.ACTION_UP -> modeTouchBehavior = false
                 }
             }
             invalidate()
@@ -115,9 +126,6 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun actionDown(x: Float, y: Float) {
-        myPath.reset()
-        myPathFullBitmap.reset()
-
         myPath.moveTo(x, y)
         myPathFullBitmap.moveTo(x * coefficientX, (y * coefficientY) - topPoint * coefficientY)
 
@@ -129,6 +137,7 @@ class ImagePhotoView @JvmOverloads constructor(
 
     private fun actionMove(x: Float, y: Float) {
         myPath.quadTo(currentX, currentY, (x + currentX) / 2, (y + currentY) / 2)
+
         currentX = x
         currentY = y
 
@@ -150,8 +159,7 @@ class ImagePhotoView @JvmOverloads constructor(
             myPath.lineTo(currentX + 1, currentY + 2)
             myPath.lineTo(currentX + 1, currentY)
         }
-        allPoints[myPath] = paintLine
-
+        points[myPath] = paintLine
         myPathFullBitmap.lineTo(currentFullBitmapX, currentFullBitmapY)
 
         if (startPointFullBitmapX == currentFullBitmapX && startPointFullBitmapY == currentFullBitmapY) {
@@ -161,6 +169,8 @@ class ImagePhotoView @JvmOverloads constructor(
         }
 
         allPointsFullBitmap[myPathFullBitmap] = paintLine
+
+        allPoints[myPath] = paintLine
     }
 
     private fun updateDataValuesMatrix() {
@@ -211,8 +221,11 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun clearPath() {
+        myPath.reset()
         myPath.close()
+        myPathFullBitmap.reset()
         myPathFullBitmap.close()
+        points.clear()
         allPoints.clear()
         allPointsFullBitmap.clear()
         invalidate()
@@ -334,7 +347,9 @@ class ImagePhotoView @JvmOverloads constructor(
             for ((myPathFullBitmap, value) in allPointsFullBitmap) {
                 canvas.drawPath(myPathFullBitmap, paintLine)
             }
-            bitmapFull?.let { ImageHelper.saveToGallery(context, it, MY_ALBUM) }
+            bitmapFull?.let { ImageHelper.saveToGallery(context, it) }
+        } else {
+            Toast.makeText(context, "Не сохранилось изображение", Toast.LENGTH_SHORT).show()
         }
     }
 

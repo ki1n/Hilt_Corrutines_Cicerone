@@ -2,6 +2,7 @@ package ru.turev.hiltcorrutinescicerone.ui.image_photo
 
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
@@ -96,8 +97,9 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     }
 
     private fun getImagePhotoFull(imagePhotoView: ImagePhotoView, placeholder: Drawable) {
+        val url = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) itemPhoto.full else itemPhoto.regular
         Glide.with(requireContext())
-            .load(itemPhoto.full)
+            .load(url)
             .listener(object : RequestListener<Drawable> {
                 override fun onLoadFailed(p0: GlideException?, p1: Any?, p2: Target<Drawable>?, p3: Boolean): Boolean {
                     return false
@@ -118,6 +120,7 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
         withContext(Dispatchers.IO) { Glide.with(requireContext()).asDrawable().load(itemPhoto.small).submit().get() }
 
     private suspend fun getBitmapFull(): Bitmap = withContext(Dispatchers.IO) {
-        Glide.with(binding.imagePhotoView.context).asBitmap().load(itemPhoto.full).submit().get()
+        val url = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) itemPhoto.full else itemPhoto.regular
+        Glide.with(binding.imagePhotoView.context).asBitmap().load(url).submit().get()
     }
 }
