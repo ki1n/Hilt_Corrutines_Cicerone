@@ -6,7 +6,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.widget.Toast
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,7 +47,7 @@ object ImageHelper : CoroutineScope {
             }
 
         } catch (e: Exception) {
-            Toast.makeText(context, "$e", Toast.LENGTH_SHORT).show()
+            Log.d("qqq", "ImageHelper Exception:  $e")
         }
     }
 }

@@ -343,6 +343,7 @@ class ImagePhotoView @JvmOverloads constructor(
 
     fun saveImage() {
         if (bitmapFull != null) {
+
             val canvas = Canvas(bitmapFull!!)
             for ((myPathFullBitmap, value) in allPointsFullBitmap) {
                 canvas.drawPath(myPathFullBitmap, paintLine)
@@ -375,6 +376,6 @@ class ImagePhotoView @JvmOverloads constructor(
 
     fun setBitmapFull(isBitmapFull: Boolean, bitmapFull: Bitmap) {
         this.isBitmapFull = isBitmapFull
-        this.bitmapFull = bitmapFull
+        this.bitmapFull = bitmapFull.copy(Bitmap.Config.ARGB_8888, true)
     }
 }

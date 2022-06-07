@@ -1,10 +1,14 @@
 package ru.turev.hiltcorrutinescicerone.ui.image_photo
 
+import android.app.ActivityManager
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import androidx.core.graphics.scale
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
@@ -26,6 +30,8 @@ import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 import ru.turev.hiltcorrutinescicerone.view.ImagePhotoView
+import kotlin.math.sqrt
+
 
 @AndroidEntryPoint
 class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
@@ -54,6 +60,12 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             isClearDraw.observe(::onSubscribedClearDraw)
             showClearDraw.observe { showSnackbar(R.string.image_photo_show_clear_draw) }
             showSave.observe { showSnackbar(R.string.image_photo_show_save) }
+            bitmapFull.observe {
+                if (it != null) {
+                    val resultBitmap = getDeviceMemoryLimit(it)
+                    binding.imagePhotoView.setBitmapFull(true, resultBitmap)
+                }
+            }
         }
         with(binding) {
             appBarImagePhoto.imgBack.setOnClickListener { viewModel.onExit() }
@@ -82,9 +94,10 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
         lifecycleScope.launch {
             whenStarted {
                 with(binding) {
+                    // getDeviceMemoryLimit()
                     val placeholder = getPlaceholder()
                     val bitmapFull = getBitmapFull()
-                    imagePhotoView.setBitmapFull(true, bitmapFull)
+                    //  imagePhotoView.setBitmapFull(true, bitmapFull)
                     getImagePhotoFull(imagePhotoView, placeholder)
                 }
             }
@@ -119,8 +132,72 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     private suspend fun getPlaceholder(): Drawable =
         withContext(Dispatchers.IO) { Glide.with(requireContext()).asDrawable().load(itemPhoto.small).submit().get() }
 
-    private suspend fun getBitmapFull(): Bitmap = withContext(Dispatchers.IO) {
-        val url = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) itemPhoto.full else itemPhoto.regular
-        Glide.with(binding.imagePhotoView.context).asBitmap().load(url).submit().get()
+    private fun getBitmapFull() {
+        viewModel.getBitmapFull(itemPhoto.full)
+    }
+
+    private fun getDeviceMemoryLimit(bitmap: Bitmap): Bitmap {
+        val activityManager: ActivityManager = context?.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val largeMemoryClass = activityManager.largeMemoryClass
+       // val memoryClass = activityManager.memoryClass
+        val memoryClass = 32
+
+        Log.d("qqq", "bitmap M: ${bitmap.width * bitmap.height * 4 / 1024 / 1024}")
+        Log.d("qqq", "bitmap.width: ${bitmap.width}")
+        Log.d("qqq", "bitmap.height: ${bitmap.height}")
+
+        val sizeBitmap = bitmap.width * bitmap.height * 4
+
+
+        val k = bitmap.width * 1f / bitmap.height * 1f
+        Log.d("qqq", "k: ${k}")
+
+        val pixelsCount = (memoryClass / 4) * 1024 * 1024
+        Log.d("qqq", "pixelsCount: ${pixelsCount}")
+
+        val newHeight = sqrt((pixelsCount / k).toFloat())
+        Log.d("qqq", "newHeight: $newHeight")
+
+        val newWidth = k * newHeight
+        Log.d("qqq", "newWidth: $newWidth")
+
+
+        val resultBitmap = bitmap.scale(newWidth.toInt(), newHeight.toInt(), true)
+//        val options = BitmapFactory.Options().apply {
+//            inJustDecodeBounds = true
+//        }
+//
+//        options.inSampleSize = 4
+//
+//        val size: Int = bitmap.rowBytes * bitmap.height
+//        val byteBuffer: ByteBuffer = ByteBuffer.allocate(size)
+//        bitmap.copyPixelsToBuffer(byteBuffer)
+//        val byteArray = byteBuffer.array()
+
+//        val scaleFactor: Int =
+//            Math.min(cameraImageWidth / targetImageViewWidth, cameraImageHeight / targetImageViewHeight)
+//        bmOptions.inSampleSize = scaleFactor
+//        bmOptions.inJustDecodeBounds = false
+//        val photoReducedSizeBitmp = BitmapFactory.decodeFile(mImageFileLocation, bmOptions)
+
+//        val stream = ByteArrayOutputStream()
+//        bitmap.compress(Bitmap.CompressFormat.PNG, 10, stream)
+//        val image = stream.toByteArray()
+
+        // val newBitmsp = bitmap.scale(100)
+
+        //val resultBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
+
+        Log.d("qqq", "resultBitmap M: ${resultBitmap.width * resultBitmap.height * 4 / 1024 / 1024}")
+        Log.d("qqq", "resultBitmap.width: ${resultBitmap.width}")
+        Log.d("qqq", "resultBitmap.height: ${resultBitmap.height}")
+
+
+//        Log.d("qqq", "largeMemoryClass: $deviceMemoryLimit")
+//        Log.d("qqq", "memoryClass: $deviceMemoryLimit2")
+
+
+        return resultBitmap
+
     }
 }
