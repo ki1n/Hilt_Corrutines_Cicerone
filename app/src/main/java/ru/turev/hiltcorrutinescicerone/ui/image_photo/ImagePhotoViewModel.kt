@@ -70,6 +70,7 @@ class ImagePhotoViewModel @Inject constructor(
                 _bitmapFull.value = photoInteractor.getBitmapFull(urlFull).apply {
                     Log.d("qqq", "getBitmapFull: $this ")
                 }
+                _isSave.value = true
             } catch (e: Exception) {
                 Log.e("qqq", "Exception: ", e)
             }

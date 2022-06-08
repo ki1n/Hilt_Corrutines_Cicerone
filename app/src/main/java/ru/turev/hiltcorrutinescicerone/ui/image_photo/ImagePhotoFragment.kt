@@ -65,9 +65,10 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             isClearDraw.observe(::onSubscribedClearDraw)
             showClearDraw.observe { showSnackbar(R.string.image_photo_show_clear_draw) }
             showSave.observe { showSnackbar(R.string.image_photo_show_save) }
+            isSave.observe(::setIsBitmapFull)
             bitmapFull.observe {
                 if (it != null) {
-                    binding.imagePhotoView.setBitmapFull(true, it)
+                    binding.imagePhotoView.setBitmapFull(it)
                 }
             }
         }
@@ -92,6 +93,11 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             appBarImagePhoto.imgExitDraw.isVisible = isDraw
             appBarImagePhoto.imgClear.isVisible = isDraw
         }
+    }
+
+    private fun setIsBitmapFull(isBitmapFull: Boolean) {
+        binding.imagePhotoView.setIsBitmapFull(isBitmapFull)
+        // todo снекбар
     }
 
     private fun initData() {
