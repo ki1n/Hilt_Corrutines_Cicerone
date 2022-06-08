@@ -2,6 +2,7 @@ package ru.turev.hiltcorrutinescicerone.domain.interacror
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import ru.turev.hiltcorrutinescicerone.data.memory.FreeMemory
 import ru.turev.hiltcorrutinescicerone.domain.repository.PhotoRepository
 import java.io.BufferedInputStream
@@ -47,6 +48,7 @@ class PhotoInteractor @Inject constructor(
             val bufferedInputStreamFourth = BufferedInputStream(fourthResponse.byteStream())
             val bitmap = BitmapFactory.decodeStream(bufferedInputStreamFourth)
             bufferedInputStreamFourth.close()
+            Log.d("qqq", "getBitmapFull: $bitmap")
             return bitmap
         }
         bufferedInputStreamFirst.close()
