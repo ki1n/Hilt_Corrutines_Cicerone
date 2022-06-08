@@ -56,7 +56,6 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             showSave.observe { showSnackbar(R.string.image_photo_show_save) }
             bitmapFull.observe {
                 if (it != null) {
-                    //  val resultBitmap = getDeviceMemoryLimit(it)
                     binding.imagePhotoView.setBitmapFull(true, it)
                 }
             }
@@ -128,34 +127,4 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     private fun getBitmapFull() {
         viewModel.getBitmapFull(itemPhoto.full)
     }
-
-//    private fun getDeviceMemoryLimit(bitmap: Bitmap): Bitmap {
-//        val memoryInfo = ActivityManager.MemoryInfo()
-//        val activityManager: ActivityManager = context?.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-//        activityManager.getMemoryInfo(memoryInfo)
-//        val availableMegs = memoryInfo.availMem / 0x100000L
-//        Log.d("qqq", "availableMegs in Mb: $availableMegs")
-//        val sizeBitmapFull = (bitmap.width * bitmap.height) * 4 / 1024 / 1024
-//        Log.d("qqq", "sizeBitmapFull in Mb: $sizeBitmapFull")
-//
-//        if (sizeBitmapFull > availableMegs) {
-//           // val sizeNewBitmap = availableMegs * 0.75
-//            val sizeNewBitmap = 12
-//
-//            val k = bitmap.width * 1f / bitmap.height * 1f
-//            val pixelsCount = (sizeNewBitmap / 4) * 1024 * 1024
-//            val newHeight = sqrt((pixelsCount / k))
-//            val newWidth = k * newHeight
-//
-//            Log.d("qqq", "newWidth.toInt(): ${newWidth.toInt()}")
-//            Log.d("qqq", "newHeight.toInt(): ${newHeight.toInt()}")
-//            Log.d("qqq", "newBitmap in Mb: ${(newHeight * newWidth) * 4 / 1024 / 1024}")
-//            return bitmap.scale(newWidth.toInt(), newHeight.toInt(), true)
-//        } else {
-//            Log.d("qqq", "bitmap.width: ${bitmap.width}")
-//            Log.d("qqq", "bitmap.height: ${bitmap.height}")
-//            Log.d("qqq", "sizeBitmapFull in Mb: $sizeBitmapFull")
-//            return bitmap
-//        }
-//    }
 }

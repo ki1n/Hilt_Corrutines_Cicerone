@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
@@ -44,10 +45,10 @@ class ImagePhotoView @JvmOverloads constructor(
     private val paintLine = Paint()
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.image_photo_drawing_line_thickness)
 
-    private var points = HashMap<MyPath, Paint>()
-    private var allPoints = HashMap<MyPath, Paint>()
-    private var allPointsFullBitmap = HashMap<MyPath, Paint>()
-    private var myPath = MyPath()
+    private var allPoints = HashMap<Path, Paint>()
+    private var allPointsFullBitmap = HashMap<Path, Paint>()
+    private var path = Path()
+
     private var myPathFullBitmap = MyPath()
     private var matrixByPoints = Matrix()
     private var isBitmapFull = false
@@ -126,7 +127,7 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun actionDown(x: Float, y: Float) {
-        myPath.moveTo(x, y)
+        path.moveTo(x, y)
         myPathFullBitmap.moveTo(x * coefficientX, (y * coefficientY) - topPoint * coefficientY)
 
         currentX = x
@@ -136,7 +137,7 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun actionMove(x: Float, y: Float) {
-        myPath.quadTo(currentX, currentY, (x + currentX) / 2, (y + currentY) / 2)
+        path.quadTo(currentX, currentY, (x + currentX) / 2, (y + currentY) / 2)
 
         currentX = x
         currentY = y
@@ -152,14 +153,14 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     private fun actionUp() {
-        myPath.lineTo(currentX, currentY)
+        path.lineTo(currentX, currentY)
 
         if (startPointX == currentX && startPointY == currentY) {
-            myPath.lineTo(currentX, currentY + 2)
-            myPath.lineTo(currentX + 1, currentY + 2)
-            myPath.lineTo(currentX + 1, currentY)
+            path.lineTo(currentX, currentY + 2)
+            path.lineTo(currentX + 1, currentY + 2)
+            path.lineTo(currentX + 1, currentY)
         }
-        points[myPath] = paintLine
+
         myPathFullBitmap.lineTo(currentFullBitmapX, currentFullBitmapY)
 
         if (startPointFullBitmapX == currentFullBitmapX && startPointFullBitmapY == currentFullBitmapY) {
@@ -170,7 +171,7 @@ class ImagePhotoView @JvmOverloads constructor(
 
         allPointsFullBitmap[myPathFullBitmap] = paintLine
 
-        allPoints[myPath] = paintLine
+        allPoints[path] = paintLine
     }
 
     private fun updateDataValuesMatrix() {
@@ -214,18 +215,17 @@ class ImagePhotoView @JvmOverloads constructor(
 
     private fun drawLinePatch(canvas: Canvas) {
         canvas.withMatrix(matrixByPoints) {
-            for ((myPath, value) in allPoints) {
+            for ((myPath) in allPoints) {
                 canvas.drawPath(myPath, paintLine)
             }
         }
     }
 
     private fun clearPath() {
-        myPath.reset()
-        myPath.close()
+        path.reset()
+        path.close()
         myPathFullBitmap.reset()
         myPathFullBitmap.close()
-        points.clear()
         allPoints.clear()
         allPointsFullBitmap.clear()
         invalidate()
@@ -345,7 +345,7 @@ class ImagePhotoView @JvmOverloads constructor(
         if (bitmapFull != null) {
 
             val canvas = Canvas(bitmapFull!!)
-            for ((myPathFullBitmap, value) in allPointsFullBitmap) {
+            for ((myPathFullBitmap) in allPointsFullBitmap) {
                 canvas.drawPath(myPathFullBitmap, paintLine)
             }
             bitmapFull?.let { ImageHelper.saveToGallery(context, it) }
