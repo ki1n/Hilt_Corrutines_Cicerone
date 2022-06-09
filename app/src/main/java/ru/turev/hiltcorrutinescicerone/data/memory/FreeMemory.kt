@@ -1,10 +1,7 @@
 package ru.turev.hiltcorrutinescicerone.data.memory
 
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class FreeMemory @Inject constructor() {
+object FreeMemory {
 
     fun getRemainingFreeMemory(): Long {
         val runtime = Runtime.getRuntime()

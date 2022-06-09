@@ -231,10 +231,14 @@ class ImagePhotoView @JvmOverloads constructor(
         invalidate()
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        focusPoint.set(measuredWidth / 2 * 1f, measuredHeight / 2 * 1f)
+    }
+
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         if (!isDrawMode) {
             scaleFactor *= detector.scaleFactor
-            focusPoint.set(measuredWidth / 2 * 1f, measuredHeight / 2 * 1f)
             matrixByImage.set(savedByImageMatrix)
 
             matrixByImage.postScale(
@@ -374,7 +378,8 @@ class ImagePhotoView @JvmOverloads constructor(
     }
 
     fun setBitmapFull(bitmapFull: Bitmap) {
-        this.bitmapFull = bitmapFull.copy(Bitmap.Config.ARGB_8888, true)
+        this.bitmapFull = bitmapFull
+       // this.bitmapFull = bitmapFull.copy(Bitmap.Config.ARGB_8888, true)
     }
 
     fun setIsBitmapFull(isBitmapFull: Boolean) {

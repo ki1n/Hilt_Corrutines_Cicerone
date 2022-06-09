@@ -66,11 +66,7 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             showClearDraw.observe { showSnackbar(R.string.image_photo_show_clear_draw) }
             showSave.observe { showSnackbar(R.string.image_photo_show_save) }
             isSave.observe(::setIsBitmapFull)
-            bitmapFull.observe {
-                if (it != null) {
-                    binding.imagePhotoView.setBitmapFull(it)
-                }
-            }
+            bitmapFull.observe { it?.let { binding.imagePhotoView.setBitmapFull(it) } }
         }
         with(binding) {
             appBarImagePhoto.imgBack.setOnClickListener { viewModel.onExit() }
@@ -97,7 +93,6 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
 
     private fun setIsBitmapFull(isBitmapFull: Boolean) {
         binding.imagePhotoView.setIsBitmapFull(isBitmapFull)
-        // todo снекбар
     }
 
     private fun initData() {
@@ -119,6 +114,8 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
     private fun checkGalleryPermission() {
         if (isGalleryPermissionGranted()) {
             onPermissionResult(true)
+            binding.appBarImagePhoto.progressSave.isVisible = true
+            binding.appBarImagePhoto.imgSave.isVisible = false
         } else when (requestGalleryPermission()) {
             true -> handlePermissionsNotGranted()
             false -> permissionRequest.launch(writeGalleryPermission)
