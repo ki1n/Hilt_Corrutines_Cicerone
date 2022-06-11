@@ -10,6 +10,7 @@
 
     <color name="grey">#C6C0C0</color>
     <color name="black_grey">#2B2929</color>
+    <color name="background">#FFFFFF</color>
 
     <!-- ImagePhotoView -->
     <color name="image_photo_view_red">#DA3731</color>

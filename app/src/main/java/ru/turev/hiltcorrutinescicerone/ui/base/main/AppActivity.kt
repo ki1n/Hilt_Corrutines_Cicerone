@@ -21,7 +21,7 @@ class AppActivity : AppCompatActivity() {
     private val navigator by lazy { AppNavigator(this, R.id.container_app) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        //setTheme(R.style.AppTheme)
+        setTheme(R.style.AppTheme)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app)
 
