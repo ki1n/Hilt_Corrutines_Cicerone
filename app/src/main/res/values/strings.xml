@@ -10,4 +10,7 @@
     <string name="image_photo_show_clear_draw">Нарисованное очищено</string>
     <string name="image_photo_show_save">Изображение сохраняется</string>
 
+    <string name="share_gallery_permission">Пожалуйста, предоставьте галерее разрешение на сохранение фотографии в
+         галерея</string>
+
 </resources>

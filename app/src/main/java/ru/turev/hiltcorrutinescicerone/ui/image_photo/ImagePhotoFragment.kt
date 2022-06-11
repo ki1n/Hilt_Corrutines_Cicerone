@@ -1,8 +1,11 @@
 package ru.turev.hiltcorrutinescicerone.ui.image_photo
 
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
@@ -20,10 +23,15 @@ import kotlinx.coroutines.withContext
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentImagePhotoBinding
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
+import ru.turev.hiltcorrutinescicerone.extension.isGalleryPermissionGranted
+import ru.turev.hiltcorrutinescicerone.extension.requestGalleryPermission
+import ru.turev.hiltcorrutinescicerone.extension.showToastShort
+import ru.turev.hiltcorrutinescicerone.extension.writeGalleryPermission
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 import ru.turev.hiltcorrutinescicerone.view.ImagePhotoView
+
 
 @AndroidEntryPoint
 class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
@@ -40,6 +48,11 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
 
     private val binding by viewBinding(FragmentImagePhotoBinding::bind)
 
+    private val permissionRequest: ActivityResultLauncher<String> = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+        ::onPermissionResult
+    )
+
     private val itemPhoto by lazy { requireArguments().getParcelable<ItemPhoto>(ARGUMENT_PAYLOAD)!! }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -52,6 +65,8 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
             isClearDraw.observe(::onSubscribedClearDraw)
             showClearDraw.observe { showSnackbar(R.string.image_photo_show_clear_draw) }
             showSave.observe { showSnackbar(R.string.image_photo_show_save) }
+            isSave.observe(::setIsBitmapFull)
+            bitmapFull.observe { it?.let { binding.imagePhotoView.setBitmapFull(it) } }
         }
         with(binding) {
             appBarImagePhoto.imgBack.setOnClickListener { viewModel.onExit() }
@@ -76,23 +91,54 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
         }
     }
 
+    private fun setIsBitmapFull(isBitmapFull: Boolean) {
+        binding.imagePhotoView.setIsBitmapFull(isBitmapFull)
+    }
+
     private fun initData() {
         lifecycleScope.launch {
             whenStarted {
-                val placeholder = getPlaceholder()
-                getImagePhotoFull(binding.imagePhotoView, placeholder)
+                with(binding) {
+                    getBitmapFull()
+                    val placeholder = getPlaceholder()
+                    getImagePhotoFull(imagePhotoView, placeholder)
+                }
             }
         }
     }
 
     private fun saveImage() {
-        viewModel.onSaveImage()
-        binding.imagePhotoView.saveImage()
+        checkGalleryPermission()
+    }
+
+    private fun checkGalleryPermission() {
+        if (isGalleryPermissionGranted()) {
+            onPermissionResult(true)
+            binding.appBarImagePhoto.progressSave.isVisible = true
+            binding.appBarImagePhoto.imgSave.isVisible = false
+        } else when (requestGalleryPermission()) {
+            true -> handlePermissionsNotGranted()
+            false -> permissionRequest.launch(writeGalleryPermission)
+        }
+    }
+
+    private fun onPermissionResult(isGranted: Boolean) {
+        if (isGranted) {
+            viewModel.onSaveImage()
+            binding.imagePhotoView.saveImage()
+        } else {
+            handlePermissionsNotGranted()
+        }
+    }
+
+    private fun handlePermissionsNotGranted() {
+        showToastShort(R.string.share_gallery_permission)
     }
 
     private fun getImagePhotoFull(imagePhotoView: ImagePhotoView, placeholder: Drawable) {
+        val url = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) itemPhoto.full else itemPhoto.regular
         Glide.with(requireContext())
-            .load(itemPhoto.full)
+            .load(url)
             .listener(object : RequestListener<Drawable> {
                 override fun onLoadFailed(p0: GlideException?, p1: Any?, p2: Target<Drawable>?, p3: Boolean): Boolean {
                     return false
@@ -111,4 +157,8 @@ class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {
 
     private suspend fun getPlaceholder(): Drawable =
         withContext(Dispatchers.IO) { Glide.with(requireContext()).asDrawable().load(itemPhoto.small).submit().get() }
+
+    private fun getBitmapFull() {
+        viewModel.getBitmapFull(itemPhoto.full)
+    }
 }

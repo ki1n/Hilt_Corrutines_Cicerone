@@ -1,17 +1,28 @@
 package ru.turev.hiltcorrutinescicerone.ui.image_photo
 
+import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.github.terrakok.cicerone.Router
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import ru.turev.hiltcorrutinescicerone.domain.interacror.PhotoInteractor
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseViewModel
 import ru.turev.hiltcorrutinescicerone.util.LiveEvent
 import javax.inject.Inject
 
 @HiltViewModel
 class ImagePhotoViewModel @Inject constructor(
-    private val router: Router
+    private val router: Router,
+    private val photoInteractor: PhotoInteractor
 ) : BaseViewModel(router) {
+
+    val bitmapFull: LiveData<Bitmap?> get() = _bitmapFull
+    private val _bitmapFull = MutableLiveData<Bitmap?>()
 
     val isDraw: LiveData<Boolean> get() = _isDraw
     private val _isDraw = MediatorLiveData<Boolean>()
@@ -51,5 +62,18 @@ class ImagePhotoViewModel @Inject constructor(
 
     fun onSaveImage() {
         _showSave.call()
+    }
+
+    fun getBitmapFull(urlFull: String) {
+        viewModelScope.launch(Dispatchers.Main) {
+            try {
+                _bitmapFull.value = photoInteractor.getBitmapFull(urlFull).apply {
+                    Log.d("qqq", "getBitmapFull: $this ")
+                }
+                _isSave.value = true
+            } catch (e: Exception) {
+                Log.e("qqq", "Exception: ", e)
+            }
+        }
     }
 }

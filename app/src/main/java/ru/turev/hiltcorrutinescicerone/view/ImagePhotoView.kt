@@ -7,13 +7,16 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
+import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.graphics.withMatrix
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.util.ImageHelper
 import ru.turev.hiltcorrutinescicerone.util.extension.getCompatColor
@@ -29,77 +32,91 @@ class ImagePhotoView @JvmOverloads constructor(
     companion object {
         private const val MAX_SCALE = 5f
         private const val MIN_SCALE = 1f
-        private const val MY_ALBUM = "albumName"
     }
 
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
     private val gestureDetector = GestureDetector(context, this)
     private var scaleFactor = 1f
     private var matrixByImage = Matrix()
-    private var savedMatrix = Matrix()
+    private var savedByImageMatrix = Matrix()
     private var isScaling = false
     private val focusPoint = PointF()
-    private val startFocusPoint = PointF() // точка первого пальца нажата
-    private val stopFocusPoint = PointF()
-    private var isDrawMode = false // эта переменная для включения режима рисования
+    private var isDrawMode = false
     private val paintLine = Paint()
         .createStroke(color = R.color.image_photo_view_red, width = R.dimen.image_photo_drawing_line_thickness)
-    private val points = mutableListOf<PointF>()
+
+    private var allPoints = HashMap<Path, Paint>()
+    private var allPointsFullBitmap = HashMap<Path, Paint>()
     private var path = Path()
+
+    private var myPathFullBitmap = MyPath()
+    private var matrixByPoints = Matrix()
+    private var isBitmapFull = false
+    private var bitmapFull: Bitmap? = null
+
+    private var startPointX = 0f
+    private var startPointY = 0f
+    private var currentX = 0f
+    private var currentY = 0f
+
+    private var startPointFullBitmapX = 0f
+    private var startPointFullBitmapY = 0f
+    private var currentFullBitmapX = 0f
+    private var currentFullBitmapY = 0f
+
     private var modeTouchBehavior = false
     private var topPoint = 0f
     private var lowPoint = 0f
     private var lowerRightPoint = 0f
     private var isZoomImage = false
+    private var coefficientX = 1f
+    private var coefficientY = 1f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isZoomImage) {
             scaleType = ScaleType.MATRIX
             matrixByImage.set(imageMatrix)
-            savedMatrix.set(matrixByImage)
+            savedByImageMatrix.set(matrixByImage)
+
             scaleGestureDetector.onTouchEvent(event)
-            if (!isScaling && scaleFactor > 1) {
-                gestureDetector.onTouchEvent(event)
-            }
+            if (!isScaling && scaleFactor > 1) gestureDetector.onTouchEvent(event)
+
             imageMatrix = matrixByImage
 
+            val values: FloatArray = floatArrayOf(event.x, event.y)
+            matrixByPoints.mapPoints(values)
+            val x = values[0]
+            val y = values[1]
+            recalculationPointsOriginalImage()
+
             if (isDrawMode) {
-                when (event.action and MotionEvent.ACTION_MASK) {
-                    MotionEvent.ACTION_CANCEL,
-                        // срабатывает при отпускании последнего пальца
-                    MotionEvent.ACTION_UP,
-                        // срабатывает при касании первого пальца
+                when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
-                        val isPoint = isEventToMatrix(event.x, event.y)
-                        if (isPoint) {
-                            val startPoint = PointF(event.x, event.y)
-                            points.add(startPoint)
+                        if (isEventToMatrix(event.x, event.y)) {
+                            startPointX = x
+                            startPointY = y
+                            startPointFullBitmapX = x * coefficientX
+                            startPointFullBitmapY = (y * coefficientY) - topPoint * coefficientY
+
+                            actionDown(x, y)
                             modeTouchBehavior = true
                         }
                     }
-                    // срабатывает при касании каждого последующего пальца к примеру второй
-                    MotionEvent.ACTION_POINTER_DOWN,
-                        // Движение пальца пользователя по экрану
                     MotionEvent.ACTION_MOVE -> {
-                        val isPoint = isEventToMatrix(event.x, event.y)
-                        if (!isPoint) {
-                            points.clear()
-                            val point = PointF(event.x, event.y)
-                            points.add(point)
+                        if (!isEventToMatrix(event.x, event.y)) {
+                            startPointX = x
+                            startPointY = y
+                            startPointFullBitmapX = x * coefficientX
+                            startPointFullBitmapY = (y * coefficientY) - topPoint * coefficientY
+                            actionDown(x, y)
                         }
 
-                        if (modeTouchBehavior && isPoint) {
-                            stopFocusPoint.set(event.x, event.y)
-                            val latestPoint = points.lastOrNull()
-                            val point = PointF(event.x, event.y)
-                            points.add(point)
-                            latestPoint?.let { startFocusPoint.set(latestPoint.x, latestPoint.y) }
+                        if (isEventToMatrix(event.x, event.y) && modeTouchBehavior) {
+                            actionMove(x, y)
+                            actionUp()
                         }
                     }
-                    // срабатывает при отпускании каждого пальца кроме последнего
-                    MotionEvent.ACTION_POINTER_UP -> {
-                        modeTouchBehavior = false
-                    }
+                    MotionEvent.ACTION_UP -> modeTouchBehavior = false
                 }
             }
             invalidate()
@@ -109,20 +126,68 @@ class ImagePhotoView @JvmOverloads constructor(
         }
     }
 
+    private fun actionDown(x: Float, y: Float) {
+        path.moveTo(x, y)
+        myPathFullBitmap.moveTo(x * coefficientX, (y * coefficientY) - topPoint * coefficientY)
+
+        currentX = x
+        currentY = y
+        currentFullBitmapX = x * coefficientX
+        currentFullBitmapY = (y * coefficientY) - topPoint * coefficientY
+    }
+
+    private fun actionMove(x: Float, y: Float) {
+        path.quadTo(currentX, currentY, (x + currentX) / 2, (y + currentY) / 2)
+
+        currentX = x
+        currentY = y
+
+        myPathFullBitmap.quadTo(
+            currentFullBitmapX,
+            currentFullBitmapY,
+            (x * coefficientX + currentFullBitmapX) / 2,
+            ((y * coefficientY) - topPoint * coefficientY + currentFullBitmapY) / 2
+        )
+        currentFullBitmapX = x * coefficientX
+        currentFullBitmapY = (y * coefficientY) - topPoint * coefficientY
+    }
+
+    private fun actionUp() {
+        path.lineTo(currentX, currentY)
+
+        if (startPointX == currentX && startPointY == currentY) {
+            path.lineTo(currentX, currentY + 2)
+            path.lineTo(currentX + 1, currentY + 2)
+            path.lineTo(currentX + 1, currentY)
+        }
+
+        myPathFullBitmap.lineTo(currentFullBitmapX, currentFullBitmapY)
+
+        if (startPointFullBitmapX == currentFullBitmapX && startPointFullBitmapY == currentFullBitmapY) {
+            myPathFullBitmap.lineTo(currentFullBitmapX, currentFullBitmapY + 2)
+            myPathFullBitmap.lineTo(currentFullBitmapX + 1, currentFullBitmapY + 2)
+            myPathFullBitmap.lineTo(currentFullBitmapX + 1, currentFullBitmapY)
+        }
+
+        allPointsFullBitmap[myPathFullBitmap] = paintLine
+
+        allPoints[path] = paintLine
+    }
+
     private fun updateDataValuesMatrix() {
         val values = FloatArray(9)
         matrixByImage.getValues(values)
 
         if (scaleFactor == 1f) {
-            topPoint = values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X]
-            lowPoint = values[Matrix.MSCALE_Y] * this.height - (values[Matrix.MTRANS_Y] - values[Matrix.MTRANS_X])
-            lowerRightPoint = values[Matrix.MSCALE_X] * this.width
+            topPoint = values[Matrix.MTRANS_Y]
+            lowPoint = values[Matrix.MSCALE_Y] * measuredHeight - (values[Matrix.MTRANS_Y])
+            lowerRightPoint = values[Matrix.MSCALE_X] * measuredWidth
         }
 
         if (scaleFactor > 1f) {
             topPoint = values[Matrix.MTRANS_Y]
-            lowPoint = this.height - (values[Matrix.MTRANS_Y])
-            lowerRightPoint = values[Matrix.MSCALE_X] * this.width + values[Matrix.MTRANS_X]
+            lowPoint = measuredHeight - (values[Matrix.MTRANS_Y])
+            lowerRightPoint = values[Matrix.MSCALE_X] * measuredWidth + values[Matrix.MTRANS_X]
         }
     }
 
@@ -135,51 +200,56 @@ class ImagePhotoView @JvmOverloads constructor(
         return false
     }
 
-    private fun drawLinePatch(canvas: Canvas) {
-        canvas.save()
-        path.moveTo(startFocusPoint.x, startFocusPoint.y)
-        path.lineTo(stopFocusPoint.x, stopFocusPoint.y)
-        canvas.drawPath(path, paintLine)
-        canvas.save()
-    }
-
-    private fun clearPath() {
-        val zeroPoint = PointF(0f, 0f)
-        path.reset()
-        path.close()
-        points.clear()
-        startFocusPoint.set(zeroPoint)
-        stopFocusPoint.set(zeroPoint)
-        invalidate()
-    }
-
-    fun saveImage() {
-        val bitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        this.draw(canvas)
-        ImageHelper.saveToGallery(context, bitmap, MY_ALBUM)
-    }
-
-    fun setAllowZoomImage(isZoomImage: Boolean) {
-        this.isZoomImage = isZoomImage
-    }
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         drawLinePatch(canvas)
     }
 
+    private fun recalculationPointsOriginalImage() {
+        if (bitmapFull != null) {
+            val matrixBitmap = (this.drawable as BitmapDrawable).bitmap
+            coefficientX = bitmapFull?.let { it.width.toFloat() / matrixBitmap.width.toFloat() } ?: 1f
+            coefficientY = bitmapFull?.let { it.height.toFloat() / matrixBitmap.height.toFloat() } ?: 1f
+        }
+    }
+
+    private fun drawLinePatch(canvas: Canvas) {
+        canvas.withMatrix(matrixByPoints) {
+            for ((myPath) in allPoints) {
+                canvas.drawPath(myPath, paintLine)
+            }
+        }
+    }
+
+    private fun clearPath() {
+        path.reset()
+        path.close()
+        myPathFullBitmap.reset()
+        myPathFullBitmap.close()
+        allPoints.clear()
+        allPointsFullBitmap.clear()
+        invalidate()
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        focusPoint.set(measuredWidth / 2 * 1f, measuredHeight / 2 * 1f)
+    }
+
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         if (!isDrawMode) {
             scaleFactor *= detector.scaleFactor
-            focusPoint.set(detector.focusX, detector.focusY)
-            matrixByImage.set(savedMatrix)
+            matrixByImage.set(savedByImageMatrix)
+
             matrixByImage.postScale(
                 detector.scaleFactor,
                 detector.scaleFactor,
                 focusPoint.x,
                 focusPoint.y
             )
+            matrixByPoints.postScale(detector.scaleFactor, detector.scaleFactor, focusPoint.x, focusPoint.y)
+
+            invalidate()
             return true
         }
         return false
@@ -198,11 +268,10 @@ class ImagePhotoView @JvmOverloads constructor(
                 else -> 1F
             }
             scaleFactor = scaleFactor.coerceIn(MIN_SCALE, MAX_SCALE)
-            matrixByImage.set(savedMatrix)
-            matrixByImage.postScale(backScale, backScale, focusPoint.x, focusPoint.y)
+            matrixByImage.set(savedByImageMatrix)
+            matrixByImage.postScale(backScale, backScale, measuredWidth / 2 * 1f, measuredHeight / 2 * 1f)
             checkBorders()
             setImageInVerticalCenter()
-
             isScaling = false
         }
     }
@@ -217,10 +286,12 @@ class ImagePhotoView @JvmOverloads constructor(
 
     override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, dx: Float, dy: Float): Boolean {
         if (!isDrawMode) {
-            matrixByImage.set(savedMatrix)
+            matrixByImage.set(savedByImageMatrix)
             matrixByImage.postTranslate(-dx, -dy)
+            matrixByPoints.postTranslate(-dx, -dy)
             checkBorders()
             setImageInVerticalCenter()
+            invalidate()
             return true
         }
         return false
@@ -241,6 +312,7 @@ class ImagePhotoView @JvmOverloads constructor(
             else -> 0F
         }
         matrixByImage.postTranslate(0F, dy)
+        matrixByPoints.postTranslate(0f, dy)
     }
 
     private fun getContentHeight() =
@@ -270,6 +342,19 @@ class ImagePhotoView @JvmOverloads constructor(
             else -> 0F
         }
         matrixByImage.postTranslate(dx, dy)
+        matrixByPoints.postTranslate(dx, dy)
+    }
+
+    fun saveImage() {
+        if (bitmapFull != null && isBitmapFull) {
+            val canvas = Canvas(bitmapFull!!)
+            for ((myPathFullBitmap) in allPointsFullBitmap) {
+                canvas.drawPath(myPathFullBitmap, paintLine)
+            }
+            bitmapFull?.let { ImageHelper.saveToGallery(context, it) }
+        } else {
+            Toast.makeText(context, "Не сохранилось изображение", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun Paint.createStroke(@ColorRes color: Int, @DimenRes width: Int) = this.apply {
@@ -286,5 +371,18 @@ class ImagePhotoView @JvmOverloads constructor(
 
     fun setIsClearPatch(isClearPatch: Boolean) {
         if (isClearPatch) clearPath()
+    }
+
+    fun setAllowZoomImage(isZoomImage: Boolean) {
+        this.isZoomImage = isZoomImage
+    }
+
+    fun setBitmapFull(bitmapFull: Bitmap) {
+        this.bitmapFull = bitmapFull
+       // this.bitmapFull = bitmapFull.copy(Bitmap.Config.ARGB_8888, true)
+    }
+
+    fun setIsBitmapFull(isBitmapFull: Boolean) {
+        this.isBitmapFull = isBitmapFull
     }
 }

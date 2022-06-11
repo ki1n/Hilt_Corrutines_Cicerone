@@ -11,6 +11,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ru.turev.hiltcorrutinescicerone.BuildConfig
+import ru.turev.hiltcorrutinescicerone.data.network.api.ImageDownloadApi
 import ru.turev.hiltcorrutinescicerone.data.network.api.PhotosDownloadApi
 import ru.turev.hiltcorrutinescicerone.util.constants.Constants
 import java.util.concurrent.TimeUnit
@@ -34,6 +35,18 @@ object NetworkModule {
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
+
+    @Provides
+    @Singleton
+    fun provideRetrofitImage(
+        okHttpClient: OkHttpClient,
+        gson: Gson
+    ) = Retrofit.Builder()
+        .baseUrl("https://images.unsplash.com/")
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create(gson))
+        .build()
+        .create(ImageDownloadApi::class.java)
 
     @Provides
     @Singleton
