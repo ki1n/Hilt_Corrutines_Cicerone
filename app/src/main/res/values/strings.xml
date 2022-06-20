@@ -13,4 +13,6 @@
     <string name="share_gallery_permission">Пожалуйста, предоставьте галерее разрешение на сохранение фотографии в
          галерея</string>
 
+    <string name="search_hint">Dog</string>
+
 </resources>
