@@ -4,6 +4,7 @@ import com.github.terrakok.cicerone.androidx.FragmentScreen
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
 import ru.turev.hiltcorrutinescicerone.ui.image_photo.ImagePhotoFragment
 import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.PhotoGalleryFragment
+import ru.turev.hiltcorrutinescicerone.ui.search.SearchFragment
 
 object Screens {
 
@@ -13,5 +14,9 @@ object Screens {
 
     fun detailPhotoGalleryViewScreen(itemPhoto: ItemPhoto): FragmentScreen = FragmentScreen {
         ImagePhotoFragment.getInstance(itemPhoto)
+    }
+
+    fun searchScreen(): FragmentScreen = FragmentScreen {
+        SearchFragment.getInstance()
     }
 }
