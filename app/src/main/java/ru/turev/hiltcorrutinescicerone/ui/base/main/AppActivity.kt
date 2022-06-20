@@ -1,5 +1,6 @@
 package ru.turev.hiltcorrutinescicerone.ui.base.main
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,11 @@ class AppActivity : AppCompatActivity() {
         setContentView(R.layout.activity_app)
 
         if (supportFragmentManager.fragments.isEmpty()) appViewModel.startNavigation()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        appViewModel.getAccessToken(intent?.data?.getQueryParameter("code"))
+        super.onNewIntent(intent)
     }
 
     override fun onResumeFragments() {
