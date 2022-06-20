@@ -8,7 +8,6 @@ import java.io.BufferedInputStream
 import javax.inject.Inject
 import kotlin.math.sqrt
 
-
 class PhotoInteractor @Inject constructor(
     private val photoRepository: PhotoRepository
 ) {

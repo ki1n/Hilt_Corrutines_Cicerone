@@ -7,9 +7,12 @@
 
     <include android:id="@+id/appBarPhotoGallerySearch"
         layout="@layout/app_bar_photo_gallery_search"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/tvSearchFlow" />
 
     <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvPhotos"
         android:layout_width="match_parent"
@@ -21,6 +24,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/appBarPhotoGallerySearch"
         tools:listitem="@layout/item_photo_gallery" />
+
+    <TextView android:id="@+id/tvSearchFlow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black_grey"
+        android:gravity="center"
+        android:hint="@string/search_hint"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

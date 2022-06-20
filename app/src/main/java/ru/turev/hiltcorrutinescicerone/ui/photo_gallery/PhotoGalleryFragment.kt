@@ -5,13 +5,18 @@ import android.view.View
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.onEach
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentPhotoGalleryBinding
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.adapter.PhotoGalleryAdapter
 import ru.turev.hiltcorrutinescicerone.util.constants.Constants
+import ru.turev.hiltcorrutinescicerone.util.extension.launchWhenCreated
+import ru.turev.hiltcorrutinescicerone.util.extension.launchWhenResumed
+import ru.turev.hiltcorrutinescicerone.util.extension.launchWhenStarted
 import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 
 @AndroidEntryPoint
@@ -30,6 +35,10 @@ open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initAdapter()
+        viewModel.searchFlow.onEach {
+            handleStateSearch(it)
+        }.launchWhenStarted(lifecycleScope)
+
         viewModel.run {
             photos.observe { adapter.submitList(it) }
             showLoadError.observe { showSnackbar(R.string.photo_error) }
@@ -49,6 +58,10 @@ open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) 
                 viewModel.onClear()
                 appBarPhotoGallerySearch.etSearch.setText(Constants.STRING_EMPTY)
             }
+
+            appBarPhotoGallerySearch.imgInput.setOnClickListener {
+                viewModel.onSearchScreen()
+            }
         }
     }
 
@@ -62,5 +75,9 @@ open class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) 
             appBarPhotoGallerySearch.imgClear.isVisible = isSearchInputEmpty
             appBarPhotoGallerySearch.imgSearch.isVisible = !isSearchInputEmpty
         }
+    }
+
+    private fun handleStateSearch(string: String) {
+        binding.tvSearchFlow.text = string
     }
 }

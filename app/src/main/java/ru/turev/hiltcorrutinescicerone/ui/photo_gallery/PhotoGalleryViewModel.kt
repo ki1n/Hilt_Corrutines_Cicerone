@@ -7,9 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.github.terrakok.cicerone.Router
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
 import ru.turev.hiltcorrutinescicerone.domain.errors.Resource
+import ru.turev.hiltcorrutinescicerone.domain.interacror.SearchInteractor
 import ru.turev.hiltcorrutinescicerone.domain.repository.PhotoRepository
 import ru.turev.hiltcorrutinescicerone.navigation.Screens
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseViewModel
@@ -20,8 +23,13 @@ import javax.inject.Inject
 @HiltViewModel
 class PhotoGalleryViewModel @Inject constructor(
     private val router: Router,
-    private val photoRepository: PhotoRepository
+    private val photoRepository: PhotoRepository,
+    private val searchInteractor: SearchInteractor
 ) : BaseViewModel(router) {
+
+    companion object {
+        private const val STANDARD_REQUEST_IMAGES = 20
+    }
 
     val showLoadError: LiveData<Unit> get() = _showLoadError
     private val _showLoadError = LiveEvent<Unit>()
@@ -38,9 +46,7 @@ class PhotoGalleryViewModel @Inject constructor(
     val isSearchInputEmpty: LiveData<Boolean> get() = _isSearchInputEmpty
     private val _isSearchInputEmpty = MediatorLiveData<Boolean>()
 
-    companion object {
-        private const val STANDARD_REQUEST_IMAGES = 20
-    }
+    val searchFlow: SharedFlow<String> = searchInteractor.searchFlow.asSharedFlow()
 
     init {
         getAllPhotos()
@@ -52,6 +58,8 @@ class PhotoGalleryViewModel @Inject constructor(
 
     fun onDetailPhotoGalleryViewScreen(itemPhoto: ItemPhoto) =
         router.navigateTo(Screens.detailPhotoGalleryViewScreen(itemPhoto))
+
+    fun onSearchScreen() = router.navigateTo(Screens.searchScreen())
 
     fun onSearchInputUpdate(searchInput: String) {
         _searchInput.postValue(searchInput)
