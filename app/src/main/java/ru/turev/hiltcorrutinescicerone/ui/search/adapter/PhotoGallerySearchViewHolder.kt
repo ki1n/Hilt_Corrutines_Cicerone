@@ -1,11 +1,11 @@
-package ru.turev.hiltcorrutinescicerone.ui.photo_gallery.adapter
+package ru.turev.hiltcorrutinescicerone.ui.search.adapter
 
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import ru.turev.hiltcorrutinescicerone.databinding.ItemPhotoGalleryBinding
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
 
-class PhotoGalleryViewHolder(
+class PhotoGallerySearchViewHolder(
     private val binding: ItemPhotoGalleryBinding,
 ) : RecyclerView.ViewHolder(binding.root) {
 

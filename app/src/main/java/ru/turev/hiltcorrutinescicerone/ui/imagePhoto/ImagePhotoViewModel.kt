@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.ui.image_photo
+package ru.turev.hiltcorrutinescicerone.ui.imagePhoto
 
 import android.graphics.Bitmap
 import android.util.Log
