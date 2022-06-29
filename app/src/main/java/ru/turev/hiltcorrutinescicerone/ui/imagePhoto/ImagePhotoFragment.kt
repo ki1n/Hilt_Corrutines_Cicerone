@@ -1,4 +1,4 @@
-package ru.turev.hiltcorrutinescicerone.ui.image_photo
+package ru.turev.hiltcorrutinescicerone.ui.imagePhoto
 
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -31,7 +31,6 @@ import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
 import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.util.extension.showSnackbar
 import ru.turev.hiltcorrutinescicerone.view.ImagePhotoView
-
 
 @AndroidEntryPoint
 class ImagePhotoFragment : BaseFragment(R.layout.fragment_image_photo) {

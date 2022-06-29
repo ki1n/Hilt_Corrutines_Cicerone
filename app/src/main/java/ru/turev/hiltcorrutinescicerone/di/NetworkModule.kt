@@ -13,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import ru.turev.hiltcorrutinescicerone.BuildConfig
 import ru.turev.hiltcorrutinescicerone.data.network.api.ImageDownloadApi
 import ru.turev.hiltcorrutinescicerone.data.network.api.PhotosDownloadApi
-import ru.turev.hiltcorrutinescicerone.util.constants.Constants
+import ru.turev.hiltcorrutinescicerone.util.constants.Const
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -51,8 +51,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(logging: HttpLoggingInterceptor) = OkHttpClient.Builder()
-        .readTimeout(Constants.TIME_OUT, TimeUnit.SECONDS)
-        .connectTimeout(Constants.TIME_OUT, TimeUnit.SECONDS)
+        .readTimeout(Const.TIME_OUT, TimeUnit.SECONDS)
+        .connectTimeout(Const.TIME_OUT, TimeUnit.SECONDS)
         .addInterceptor(logging)
         .build()
 

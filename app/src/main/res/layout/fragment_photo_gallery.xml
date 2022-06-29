@@ -5,12 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <include android:id="@+id/appBarPhotoGallerySearch"
-        layout="@layout/app_bar_photo_gallery_search"
+    <include android:id="@+id/appBarPhotoGallery"
+        layout="@layout/app_bar_photo_gallery"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvSearchFlow" />
 
@@ -22,7 +21,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appBarPhotoGallerySearch"
+        app:layout_constraintTop_toBottomOf="@id/appBarPhotoGallery"
         tools:listitem="@layout/item_photo_gallery" />
 
     <TextView android:id="@+id/tvSearchFlow"
@@ -31,6 +30,7 @@
         android:background="@color/black_grey"
         android:gravity="center"
         android:hint="@string/search_hint"
+        android:lines="1"
         android:textColor="@color/white"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"

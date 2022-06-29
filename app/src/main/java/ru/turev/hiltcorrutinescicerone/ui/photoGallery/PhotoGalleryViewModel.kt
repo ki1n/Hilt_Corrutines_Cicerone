@@ -1,7 +1,6 @@
-package ru.turev.hiltcorrutinescicerone.ui.photo_gallery
+package ru.turev.hiltcorrutinescicerone.ui.photoGallery
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.github.terrakok.cicerone.Router
@@ -11,13 +10,13 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
+import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhotoPage
 import ru.turev.hiltcorrutinescicerone.domain.errors.Resource
 import ru.turev.hiltcorrutinescicerone.domain.interacror.SearchInteractor
 import ru.turev.hiltcorrutinescicerone.domain.repository.PhotoRepository
 import ru.turev.hiltcorrutinescicerone.navigation.Screens
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseViewModel
 import ru.turev.hiltcorrutinescicerone.util.LiveEvent
-import ru.turev.hiltcorrutinescicerone.util.constants.Constants
 import javax.inject.Inject
 
 @HiltViewModel
@@ -27,9 +26,17 @@ class PhotoGalleryViewModel @Inject constructor(
     private val searchInteractor: SearchInteractor
 ) : BaseViewModel(router) {
 
-    companion object {
-        private const val STANDARD_REQUEST_IMAGES = 20
-    }
+    data class Model(
+        val items: List<ItemPhoto> = emptyList(),
+        val page: Int = 1,
+        val pageCount: Int = 1
+    )
+
+    private var uiState = Model()
+        set(value) {
+            _photos.value = value
+            field = value
+        }
 
     val showLoadError: LiveData<Unit> get() = _showLoadError
     private val _showLoadError = LiveEvent<Unit>()
@@ -37,14 +44,8 @@ class PhotoGalleryViewModel @Inject constructor(
     val showLoadErrorNetwork: LiveData<Unit> get() = _showLoadErrorNetwork
     private val _showLoadErrorNetwork = LiveEvent<Unit>()
 
-    val photos: LiveData<List<ItemPhoto>> get() = _photos
-    private val _photos = MutableLiveData<List<ItemPhoto>>(listOf())
-
-    val searchInput: LiveData<String> get() = _searchInput
-    private val _searchInput = MutableLiveData<String>()
-
-    val isSearchInputEmpty: LiveData<Boolean> get() = _isSearchInputEmpty
-    private val _isSearchInputEmpty = MediatorLiveData<Boolean>()
+    val photos: LiveData<Model> get() = _photos
+    private val _photos = MutableLiveData<Model>()
 
     val searchFlow: SharedFlow<String> = searchInteractor.searchFlow.asSharedFlow()
 
@@ -52,8 +53,12 @@ class PhotoGalleryViewModel @Inject constructor(
         getAllPhotos()
     }
 
-    private fun setPhotos(photos: List<ItemPhoto>) {
-        _photos.postValue(photos)
+    private fun setPhotos(itemsPhotoPage: ItemPhotoPage) {
+        uiState = uiState.copy(
+            items = uiState.items + itemsPhotoPage.items,
+            page = itemsPhotoPage.page,
+            pageCount = itemsPhotoPage.pageCount
+        )
     }
 
     fun onDetailPhotoGalleryViewScreen(itemPhoto: ItemPhoto) =
@@ -61,21 +66,15 @@ class PhotoGalleryViewModel @Inject constructor(
 
     fun onSearchScreen() = router.navigateTo(Screens.searchScreen())
 
-    fun onSearchInputUpdate(searchInput: String) {
-        _searchInput.postValue(searchInput)
-        _isSearchInputEmpty.postValue(false)
-    }
-
-    fun onClear() {
-        _searchInput.postValue(Constants.STRING_EMPTY)
-        _isSearchInputEmpty.postValue(true)
-    }
-
-    fun onSearch() = getSearchPhotos(searchInput.value.toString())
-
-    private fun getAllPhotos() {
+    private fun getAllPhotos(next: Boolean = false) {
         viewModelScope.launch(Dispatchers.Main) {
-            when (val result = photoRepository.getAllPhotos(STANDARD_REQUEST_IMAGES)) {
+            val result: Resource<ItemPhotoPage> = if (next) {
+                photoRepository.getAllPhotos(uiState.page.inc())
+            } else {
+                photoRepository.getAllPhotos(uiState.page)
+            }
+
+            when (result) {
                 is Resource.NetworkError -> _showLoadErrorNetwork.call()
                 is Resource.Error -> _showLoadError.call()
                 is Resource.Success -> setPhotos(result.data)
@@ -83,13 +82,7 @@ class PhotoGalleryViewModel @Inject constructor(
         }
     }
 
-    private fun getSearchPhotos(searchInput: String) {
-        viewModelScope.launch(Dispatchers.Main) {
-            when (val result = photoRepository.getSearchPhotos(searchInput, STANDARD_REQUEST_IMAGES)) {
-                is Resource.NetworkError -> _showLoadErrorNetwork.call()
-                is Resource.Error -> _showLoadError.call()
-                is Resource.Success -> setPhotos(result.data)
-            }
-        }
+    fun loadNextPage() {
+        getAllPhotos(true)
     }
 }

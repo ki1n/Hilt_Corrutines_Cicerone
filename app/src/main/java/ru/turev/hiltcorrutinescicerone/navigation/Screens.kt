@@ -2,8 +2,8 @@ package ru.turev.hiltcorrutinescicerone.navigation
 
 import com.github.terrakok.cicerone.androidx.FragmentScreen
 import ru.turev.hiltcorrutinescicerone.domain.entity.ItemPhoto
-import ru.turev.hiltcorrutinescicerone.ui.image_photo.ImagePhotoFragment
-import ru.turev.hiltcorrutinescicerone.ui.photo_gallery.PhotoGalleryFragment
+import ru.turev.hiltcorrutinescicerone.ui.imagePhoto.ImagePhotoFragment
+import ru.turev.hiltcorrutinescicerone.ui.photoGallery.PhotoGalleryFragment
 import ru.turev.hiltcorrutinescicerone.ui.search.SearchFragment
 
 object Screens {
