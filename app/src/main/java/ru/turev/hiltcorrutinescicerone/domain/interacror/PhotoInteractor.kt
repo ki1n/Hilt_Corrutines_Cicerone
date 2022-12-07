@@ -35,6 +35,13 @@ class PhotoInteractor @Inject constructor(
         bufferedInputStreamThird.close()
 
         return image
+
+
+        // todo tt
+
+
+
+        
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options): Int {
