@@ -4,12 +4,12 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import by.kirich1409.viewbindingdelegate.viewBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.onEach
 import ru.turev.hiltcorrutinescicerone.R
 import ru.turev.hiltcorrutinescicerone.databinding.FragmentPhotoGalleryBinding
 import ru.turev.hiltcorrutinescicerone.ui.base.BaseFragment
-import ru.turev.hiltcorrutinescicerone.ui.base.binding.viewBinding
 import ru.turev.hiltcorrutinescicerone.ui.base.recyclerview.BaseAdapter
 import ru.turev.hiltcorrutinescicerone.ui.base.recyclerview.LoadMoreScrollListener
 import ru.turev.hiltcorrutinescicerone.ui.photoGallery.delegates.photosAdapterDelegate
@@ -25,6 +25,9 @@ class PhotoGalleryFragment : BaseFragment(R.layout.fragment_photo_gallery) {
 
     private val viewModel: PhotoGalleryViewModel by viewModels()
 
+//  private val binding by viewBinding(FragmentPhotoGalleryBinding::bind)
+
+    // todo новый биндинг от Кирила Розова
     private val binding by viewBinding(FragmentPhotoGalleryBinding::bind)
 
     private val adapter by lazy {
